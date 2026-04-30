@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Route {
+  id          String          @id @default(cuid())
+  origin      String          @db.Char(3)
+  destination String          @db.Char(3)
+  date_from   DateTime        @db.Date
+  date_to     DateTime        @db.Date
+  status      String          @default("active")
+  created_at  DateTime        @default(now())
+  snapshots   PriceSnapshot[]
+  alerts      AlertLog[]
+
+  @@index([status])
+}
+
+model PriceSnapshot {
+  id         String   @id @default(cuid())
+  route_id   String
+  source     String
+  price      Float
+  currency   String   @db.VarChar(3)
+  airline    String
+  scraped_at DateTime @default(now())
+  route      Route    @relation(fields: [route_id], references: [id])
+
+  @@index([route_id, scraped_at])
+}
+
+model AlertLog {
+  id       String   @id @default(cuid())
+  route_id String
+  tier     Int
+  sent_at  DateTime @default(now())
+  route    Route    @relation(fields: [route_id], references: [id])
+
+  @@index([route_id, tier, sent_at])
+}

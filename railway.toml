@@ -1,0 +1,7 @@
+[build]
+builder = "nixpacks"
+buildCommand = "npm run build"
+
+[deploy]
+startCommand = "npx ts-node --project tsconfig.server.json server.ts"
+restartPolicyType = "always"
