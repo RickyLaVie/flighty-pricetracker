@@ -45,9 +45,13 @@ export async function scrapeGoogleFlights(
 
       const AIRLINE_RE = /\b(STARLUX Airlines?|Cathay Pacific|EVA Air|Hong Kong Express|HK Express|Hong Kong Airlines?|China Airlines?|Mandarin Airlines?|Greater Bay Airlines?|Air Macau|AirAsia|Japan Airlines?|ANA|Korean Air|Asiana|Peach|Scoot|Tigerair|Taiwan Tigerair|VietJet|Spring Airlines?)\b/i;
 
+      // Debug: show lines containing $
+      const priceLines = lines.filter(l => /\$\d/.test(l));
+      console.log("[google-flights] price lines:", priceLines.slice(0, 20));
+
       for (let i = 0; i < lines.length; i++) {
-        // Price lines look like "$206" or "$1,234" — standalone dollar amount
-        const priceMatch = lines[i].match(/^\$(\d[\d,]*)$/);
+        // Price lines look like "$206" or "$206 round trip"
+        const priceMatch = lines[i].match(/^\$(\d[\d,]*)(?:\s|$)/);
         if (!priceMatch) continue;
 
         const price = parseFloat(priceMatch[1].replace(/,/g, ""));
