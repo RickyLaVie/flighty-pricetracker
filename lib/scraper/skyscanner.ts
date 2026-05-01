@@ -17,7 +17,8 @@ function buildSkyscannerUrl(
 export async function scrapeSkyscanner(
   origin: string,
   destination: string,
-  departureDate: string
+  departureDate: string,
+  _returnDate?: string
 ): Promise<ScrapeResult | null> {
   const browser = await launchBrowser();
   const context = await createStealthContext(browser);

@@ -11,10 +11,11 @@ export async function runScrapeForRoute(routeId: string) {
 
   const { origin, destination } = route;
   const departureDate = route.date_from.toISOString().split("T")[0];
+  const returnDate = route.date_to.toISOString().split("T")[0];
 
   const sources = [
-    () => scrapeGoogleFlights(origin, destination, departureDate),
-    () => scrapeSkyscanner(origin, destination, departureDate),
+    () => scrapeGoogleFlights(origin, destination, departureDate, returnDate),
+    () => scrapeSkyscanner(origin, destination, departureDate, returnDate),
   ];
 
   let successCount = 0;

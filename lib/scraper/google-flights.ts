@@ -4,22 +4,27 @@ import type { ScrapeResult } from "./types";
 function buildGoogleFlightsUrl(
   origin: string,
   destination: string,
-  date: string
+  date: string,
+  returnDate?: string
 ): string {
-  return `https://www.google.com/travel/flights?q=Flights+from+${origin}+to+${destination}+on+${date}&hl=en&curr=USD`;
+  const q = returnDate
+    ? `flights+from+${origin}+to+${destination}+on+${date}+returning+${returnDate}`
+    : `flights+from+${origin}+to+${destination}+on+${date}`;
+  return `https://www.google.com/travel/flights?q=${q}&hl=en&curr=USD`;
 }
 
 export async function scrapeGoogleFlights(
   origin: string,
   destination: string,
-  departureDate: string
+  departureDate: string,
+  returnDate?: string
 ): Promise<ScrapeResult | null> {
   const browser = await launchBrowser();
   const context = await createStealthContext(browser);
   const page = await context.newPage();
 
   try {
-    const url = buildGoogleFlightsUrl(origin, destination, departureDate);
+    const url = buildGoogleFlightsUrl(origin, destination, departureDate, returnDate);
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
 
     // Dismiss cookie consent dialog if present
