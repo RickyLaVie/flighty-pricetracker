@@ -48,6 +48,10 @@ export async function scrapeGoogleFlights(
         const price = parseFloat(priceMatch[1].replace(/,/g, ""));
         if (isNaN(price) || price < 50 || price > 50000) continue;
 
+        // Skip header summary prices like "Cheapest from $280"
+        const prevLine = i > 0 ? lines[i - 1].toLowerCase() : "";
+        if (/^from$|cheapest|starting|price/.test(prevLine)) continue;
+
         // Look for airline in surrounding lines (within 6 lines)
         const context = lines.slice(i, i + 7).join(" ");
         const airlineMatch = context.match(AIRLINE_RE);
@@ -57,8 +61,6 @@ export async function scrapeGoogleFlights(
       }
       return results;
     });
-
-    console.log(`[google-flights] found ${priceData.length} price entries, sample:`, priceData.slice(0, 3));
 
     if (priceData.length === 0) return null;
 
