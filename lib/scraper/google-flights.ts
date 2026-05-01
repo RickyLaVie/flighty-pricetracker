@@ -35,7 +35,7 @@ export async function scrapeGoogleFlights(
     await page.waitForTimeout(3000);
 
     // Parse prices directly from body text (most reliable across DOM structure changes)
-    const { priceData, debugPriceLines } = await page.evaluate(() => {
+    const { priceData, debugPriceLines, matchedCtx } = await page.evaluate(() => {
       const results: { price: number; currency: string; airline: string }[] = [];
       const lines = (document.body.innerText ?? "").split("\n").map(l => l.trim()).filter(Boolean);
 
@@ -44,6 +44,7 @@ export async function scrapeGoogleFlights(
       const TIME_RE = /\d{1,2}:\d{2}\s*[AP]M/i;
 
       const debugPriceLines = lines.filter(l => /\$\d/.test(l)).slice(0, 20);
+      const matchedCtx: string[] = [];
 
       for (let i = 0; i < lines.length; i++) {
         // Price lines look like "$206" or "$206 round trip"
@@ -64,11 +65,13 @@ export async function scrapeGoogleFlights(
         const airline = airlineMatch ? airlineMatch[1] : "Unknown";
 
         results.push({ price, currency: "USD", airline });
+        matchedCtx.push(`$${price} | ${airline} | ...${lines.slice(Math.max(0, i - 5), i + 2).join(" | ")}...`);
       }
-      return { priceData: results, debugPriceLines };
+      return { priceData: results, debugPriceLines, matchedCtx };
     });
 
     console.log("[google-flights] price lines found:", debugPriceLines);
+    console.log("[google-flights] matched flights:", matchedCtx);
 
     if (priceData.length === 0) return null;
 
