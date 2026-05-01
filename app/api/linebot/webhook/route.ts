@@ -30,7 +30,8 @@ async function handleTextMessage(
       await sendStatusReply(replyToken, "No routes currently being tracked.");
       return;
     }
-    const lines = routes.map((r) => {
+    type RouteWithSnapshot = Awaited<ReturnType<typeof listActiveRoutes>>[number];
+    const lines = routes.map((r: RouteWithSnapshot) => {
       const latest = r.snapshots[0];
       const price = latest
         ? `${latest.price.toLocaleString()} ${latest.currency}`
