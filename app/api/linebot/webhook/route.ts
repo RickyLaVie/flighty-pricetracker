@@ -38,14 +38,19 @@ async function handleTextMessage(
       const price = latest
         ? `${latest.price.toLocaleString()} ${latest.currency}`
         : "No data yet";
+      const airline = latest?.airline && latest.airline !== "Unknown"
+        ? latest.airline
+        : null;
       const checked = latest
         ? latest.scraped_at.toISOString().replace("T", " ").slice(0, 16) + " UTC"
         : "Never";
+      const bookingUrl = `https://www.google.com/travel/flights?q=Flights+from+${r.origin}+to+${r.destination}+on+${formatDate(r.date_from)}&hl=en&curr=USD`;
       return (
         `${r.origin} → ${r.destination}\n` +
         `  Dates: ${formatDate(r.date_from)} – ${formatDate(r.date_to)}\n` +
-        `  Price: ${price}\n` +
-        `  Checked: ${checked}`
+        `  Price: ${price}${airline ? ` (${airline})` : ""}\n` +
+        `  Checked: ${checked}\n` +
+        `  Book: ${bookingUrl}`
       );
     });
     await sendStatusReply(

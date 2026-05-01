@@ -11,6 +11,7 @@ interface Route {
   date_to: string;
   latest_price: number | null;
   latest_currency: string | null;
+  latest_airline: string | null;
   last_checked: string | null;
 }
 
@@ -38,6 +39,7 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
         ...route,
         latest_price: data.price,
         latest_currency: data.currency,
+        latest_airline: data.airline,
         last_checked: data.last_checked,
       });
     }
@@ -79,6 +81,7 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
   const checked = route.last_checked
     ? new Date(route.last_checked).toLocaleString()
     : "Never";
+  const bookingUrl = `https://www.google.com/travel/flights?q=Flights+from+${route.origin}+to+${route.destination}+on+${route.date_from.slice(0, 10)}&hl=en&curr=USD`;
 
   return (
     <div className="bg-white rounded-xl shadow p-5 flex flex-col gap-3">
@@ -156,9 +159,26 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
         </p>
       )}
 
-      <div className="text-sm text-gray-600 flex gap-4">
-        <span>💰 {price}</span>
-        <span>🕐 {checked}</span>
+      <div className="text-sm text-gray-600 flex flex-col gap-1">
+        <div className="flex gap-4">
+          <span>💰 {price}</span>
+          {route.latest_airline && route.latest_airline !== "Unknown" && (
+            <span>✈️ {route.latest_airline}</span>
+          )}
+        </div>
+        <div className="flex gap-4 items-center">
+          <span>🕐 {checked}</span>
+          {route.latest_price && (
+            <a
+              href={bookingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
+            >
+              🔗 Book on Google Flights
+            </a>
+          )}
+        </div>
       </div>
     </div>
   );

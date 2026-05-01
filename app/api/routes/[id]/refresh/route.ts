@@ -25,6 +25,7 @@ export async function POST(
   return NextResponse.json({
     price: latest?.price ?? null,
     currency: latest?.currency ?? null,
+    airline: latest?.airline ?? null,
     last_checked: latest?.scraped_at ?? null,
   });
 }
