@@ -14,6 +14,8 @@ interface Route {
   latest_airline: string | null;
   latest_departure_date: string | null;
   last_checked: string | null;
+  exclude_budget_airlines: boolean;
+  require_checked_baggage: boolean;
 }
 
 interface Props {
@@ -26,6 +28,8 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
   const [editing, setEditing] = useState(false);
   const [dateFrom, setDateFrom] = useState(route.date_from.slice(0, 10));
   const [dateTo, setDateTo] = useState(route.date_to.slice(0, 10));
+  const [excludeBudget, setExcludeBudget] = useState(route.exclude_budget_airlines);
+  const [requireBaggage, setRequireBaggage] = useState(route.require_checked_baggage);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -65,12 +69,12 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
     const res = await fetch(`/api/routes/${route.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date_from: dateFrom, date_to: dateTo }),
+      body: JSON.stringify({ date_from: dateFrom, date_to: dateTo, exclude_budget_airlines: excludeBudget, require_checked_baggage: requireBaggage }),
     });
     setBusy(false);
     if (res.ok) {
       const updated = await res.json();
-      onUpdated({ ...route, date_from: updated.date_from, date_to: updated.date_to });
+      onUpdated({ ...route, date_from: updated.date_from, date_to: updated.date_to, exclude_budget_airlines: updated.exclude_budget_airlines, require_checked_baggage: updated.require_checked_baggage });
       setEditing(false);
     } else {
       setError("Failed to update. Please try again.");
@@ -137,6 +141,16 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
               required
             />
           </div>
+          <div className="flex flex-col gap-1 text-sm text-gray-700">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={requireBaggage} onChange={e => setRequireBaggage(e.target.checked)} className="rounded" />
+              需含托運行李
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={excludeBudget} onChange={e => setExcludeBudget(e.target.checked)} className="rounded" />
+              排除廉價航空
+            </label>
+          </div>
           {error && <p className="text-red-500 text-xs">{error}</p>}
           <div className="flex gap-2">
             <button
@@ -156,9 +170,13 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
           </div>
         </form>
       ) : (
-        <p className="text-sm text-gray-500">
-          {route.date_from.slice(0, 10)} – {route.date_to.slice(0, 10)}
-        </p>
+        <div className="text-sm text-gray-500 flex flex-col gap-1">
+          <span>{route.date_from.slice(0, 10)} – {route.date_to.slice(0, 10)}</span>
+          <div className="flex gap-2 flex-wrap">
+            {route.require_checked_baggage && <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full text-xs">含托運行李</span>}
+            {route.exclude_budget_airlines && <span className="bg-orange-50 text-orange-600 px-2 py-0.5 rounded-full text-xs">排除廉價航空</span>}
+          </div>
+        </div>
       )}
 
       <div className="text-sm text-gray-600 flex flex-col gap-1">

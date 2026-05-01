@@ -13,6 +13,8 @@ interface RouteBasic {
   latest_airline: null;
   latest_departure_date: null;
   last_checked: null;
+  exclude_budget_airlines: boolean;
+  require_checked_baggage: boolean;
 }
 
 interface Props {
@@ -25,6 +27,8 @@ export function AddRouteForm({ onAdded }: Props) {
   const [destination, setDestination] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [excludeBudget, setExcludeBudget] = useState(false);
+  const [requireBaggage, setRequireBaggage] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
 
@@ -54,13 +58,15 @@ export function AddRouteForm({ onAdded }: Props) {
         destination: destination.toUpperCase(),
         date_from: dateFrom,
         date_to: dateTo,
+        exclude_budget_airlines: excludeBudget,
+        require_checked_baggage: requireBaggage,
       }),
     });
 
     setBusy(false);
     if (res.ok) {
       const route = await res.json();
-      onAdded({ ...route, latest_price: null, latest_currency: null, latest_airline: null, latest_departure_date: null, last_checked: null });
+      onAdded({ ...route, latest_price: null, latest_currency: null, latest_airline: null, latest_departure_date: null, last_checked: null, exclude_budget_airlines: excludeBudget, require_checked_baggage: requireBaggage });
       setOrigin(""); setDestination(""); setDateFrom(""); setDateTo("");
       setOpen(false);
     } else {
@@ -133,6 +139,17 @@ export function AddRouteForm({ onAdded }: Props) {
           {errors.date_to && <p className="text-red-500 text-xs mt-1">{errors.date_to}</p>}
         </div>
       </div>
+      <div className="flex flex-col gap-1 text-sm text-gray-700">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" checked={requireBaggage} onChange={e => setRequireBaggage(e.target.checked)} className="rounded" />
+          需含托運行李（排除廉價航空無行李方案）
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" checked={excludeBudget} onChange={e => setExcludeBudget(e.target.checked)} className="rounded" />
+          排除廉價航空
+        </label>
+      </div>
+
       <div className="flex gap-2">
         <button
           type="submit"

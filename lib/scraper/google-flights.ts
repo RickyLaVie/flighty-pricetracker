@@ -43,22 +43,18 @@ export async function scrapeGoogleFlights(
       const results: { price: number; currency: string; airline: string }[] = [];
       const lines = (document.body.innerText ?? "").split("\n").map(l => l.trim()).filter(Boolean);
 
-      const AIRLINE_RE = /\b(STARLUX Airlines?|Cathay Pacific|EVA Air|Hong Kong Express|Hong Kong Airlines?|China Airlines?|Mandarin Airlines?|AirAsia|Japan Airlines?|ANA|Korean Air|Asiana)\b/i;
+      const AIRLINE_RE = /\b(STARLUX Airlines?|Cathay Pacific|EVA Air|Hong Kong Express|HK Express|Hong Kong Airlines?|China Airlines?|Mandarin Airlines?|Greater Bay Airlines?|Air Macau|AirAsia|Japan Airlines?|ANA|Korean Air|Asiana|Peach|Scoot|Tigerair|Taiwan Tigerair|VietJet|Spring Airlines?)\b/i;
 
       for (let i = 0; i < lines.length; i++) {
-        // Price lines look like "$291" or "$1,234" — standalone dollar amount
+        // Price lines look like "$206" or "$1,234" — standalone dollar amount
         const priceMatch = lines[i].match(/^\$(\d[\d,]*)$/);
         if (!priceMatch) continue;
 
         const price = parseFloat(priceMatch[1].replace(/,/g, ""));
         if (isNaN(price) || price < 50 || price > 50000) continue;
 
-        // Skip header summary prices like "Cheapest from $280"
-        const prevLine = i > 0 ? lines[i - 1].toLowerCase() : "";
-        if (/^from$|cheapest|starting|price/.test(prevLine)) continue;
-
-        // Look for airline in surrounding lines (within 6 lines)
-        const context = lines.slice(i, i + 7).join(" ");
+        // Look for airline in surrounding lines (within 12 lines after price)
+        const context = lines.slice(i, i + 13).join(" ");
         const airlineMatch = context.match(AIRLINE_RE);
         const airline = airlineMatch ? airlineMatch[1] : "Unknown";
 

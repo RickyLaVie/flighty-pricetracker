@@ -12,8 +12,10 @@ model Route {
   destination String          @db.Char(3)
   date_from   DateTime        @db.Date
   date_to     DateTime        @db.Date
-  status      String          @default("active")
-  created_at  DateTime        @default(now())
+  status                   String          @default("active")
+  exclude_budget_airlines  Boolean         @default(false)
+  require_checked_baggage  Boolean         @default(false)
+  created_at               DateTime        @default(now())
   snapshots   PriceSnapshot[]
   alerts      AlertLog[]
 

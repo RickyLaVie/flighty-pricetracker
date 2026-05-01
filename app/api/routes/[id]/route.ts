@@ -1,8 +1,8 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import { updateRouteDates, softDeleteRoute, getRouteById } from "@/lib/routes/queries";
-import { updateRouteDatesSchema } from "@/lib/routes/validation";
+import { updateRoute, softDeleteRoute, getRouteById } from "@/lib/routes/queries";
+import { updateRouteSchema } from "@/lib/routes/validation";
 
 export async function PATCH(
   req: Request,
@@ -14,17 +14,19 @@ export async function PATCH(
     return NextResponse.json({ error: "Route not found" }, { status: 404 });
   }
   const body = await req.json();
-  const parsed = updateRouteDatesSchema.safeParse(body);
+  const parsed = updateRouteSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Validation failed", issues: parsed.error.flatten() },
       { status: 422 }
     );
   }
-  const updated = await updateRouteDates(id, {
-    date_from: new Date(parsed.data.date_from),
-    date_to: new Date(parsed.data.date_to),
-  });
+  const data: Parameters<typeof updateRoute>[1] = {};
+  if (parsed.data.date_from) data.date_from = new Date(parsed.data.date_from);
+  if (parsed.data.date_to) data.date_to = new Date(parsed.data.date_to);
+  if (parsed.data.exclude_budget_airlines !== undefined) data.exclude_budget_airlines = parsed.data.exclude_budget_airlines;
+  if (parsed.data.require_checked_baggage !== undefined) data.require_checked_baggage = parsed.data.require_checked_baggage;
+  const updated = await updateRoute(id, data);
   return NextResponse.json(updated);
 }
 

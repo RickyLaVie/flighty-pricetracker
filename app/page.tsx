@@ -15,6 +15,8 @@ interface Route {
   latest_airline: string | null;
   latest_departure_date: string | null;
   last_checked: string | null;
+  exclude_budget_airlines: boolean;
+  require_checked_baggage: boolean;
 }
 
 export default function Dashboard() {

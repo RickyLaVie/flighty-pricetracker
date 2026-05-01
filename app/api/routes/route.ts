@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { listActiveRoutes, createRoute } from "@/lib/routes/queries";
 import { createRouteSchema } from "@/lib/routes/validation";
 
+
 export async function GET() {
   const routes = await listActiveRoutes();
   type RouteWithSnapshot = Awaited<ReturnType<typeof listActiveRoutes>>[number];
@@ -20,6 +21,8 @@ export async function GET() {
     latest_airline: r.snapshots[0]?.airline ?? null,
     latest_departure_date: r.snapshots[0]?.departure_date ?? null,
     last_checked: r.snapshots[0]?.scraped_at ?? null,
+    exclude_budget_airlines: r.exclude_budget_airlines,
+    require_checked_baggage: r.require_checked_baggage,
   }));
   return NextResponse.json(data);
 }
@@ -33,12 +36,14 @@ export async function POST(req: Request) {
       { status: 422 }
     );
   }
-  const { origin, destination, date_from, date_to } = parsed.data;
+  const { origin, destination, date_from, date_to, exclude_budget_airlines, require_checked_baggage } = parsed.data;
   const route = await createRoute({
     origin: origin.toUpperCase(),
     destination: destination.toUpperCase(),
     date_from: new Date(date_from),
     date_to: new Date(date_to),
+    exclude_budget_airlines: exclude_budget_airlines ?? false,
+    require_checked_baggage: require_checked_baggage ?? false,
   });
   return NextResponse.json(route, { status: 201 });
 }

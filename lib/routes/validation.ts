@@ -5,10 +5,8 @@ const iataCode = z
   .length(3)
   .regex(/^[A-Z]{3}$/, "Must be a 3-letter IATA code (uppercase)");
 
-export const createRouteSchema = z
+export const updateRouteDatesSchema = z
   .object({
-    origin: iataCode,
-    destination: iataCode,
     date_from: z.string().date(),
     date_to: z.string().date(),
   })
@@ -17,10 +15,27 @@ export const createRouteSchema = z
     path: ["date_to"],
   });
 
-export const updateRouteDatesSchema = z
+export const updateRouteSchema = z
   .object({
+    date_from: z.string().date().optional(),
+    date_to: z.string().date().optional(),
+    exclude_budget_airlines: z.boolean().optional(),
+    require_checked_baggage: z.boolean().optional(),
+  })
+  .refine(
+    (d) =>
+      !d.date_from || !d.date_to || new Date(d.date_to) >= new Date(d.date_from),
+    { message: "date_to must be on or after date_from", path: ["date_to"] }
+  );
+
+export const createRouteSchema = z
+  .object({
+    origin: iataCode,
+    destination: iataCode,
     date_from: z.string().date(),
     date_to: z.string().date(),
+    exclude_budget_airlines: z.boolean().optional().default(false),
+    require_checked_baggage: z.boolean().optional().default(false),
   })
   .refine((d) => new Date(d.date_to) >= new Date(d.date_from), {
     message: "date_to must be on or after date_from",

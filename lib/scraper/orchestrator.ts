@@ -5,6 +5,17 @@ import { scrapeSkyscanner } from "./skyscanner";
 import { sendScraperFailureAlert } from "@/lib/linebot/notifications";
 import { evaluateAndAlert } from "@/lib/alerting/engine";
 
+const BUDGET_AIRLINES = [
+  "hong kong express", "hk express", "airasia", "air asia",
+  "peach", "scoot", "tigerair", "taiwan tigerair",
+  "vietjet", "spring airlines",
+];
+
+function isBudgetAirline(airline: string): boolean {
+  const lower = airline.toLowerCase();
+  return BUDGET_AIRLINES.some((b) => lower.includes(b));
+}
+
 export async function runScrapeForRoute(routeId: string) {
   const route = await prisma.route.findUnique({ where: { id: routeId } });
   if (!route || route.status !== "active") return;
@@ -23,6 +34,10 @@ export async function runScrapeForRoute(routeId: string) {
     try {
       const result = await scrape();
       if (result) {
+        // Apply route-level filters
+        if (route.exclude_budget_airlines && isBudgetAirline(result.airline)) continue;
+        if (route.require_checked_baggage && isBudgetAirline(result.airline)) continue;
+
         const snapshot = await prisma.priceSnapshot.create({
           data: {
             route_id: routeId,
