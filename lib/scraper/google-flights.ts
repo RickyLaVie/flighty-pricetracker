@@ -33,28 +33,25 @@ export async function scrapeGoogleFlights(
     await page.waitForLoadState("networkidle", { timeout: 30000 }).catch(() => {});
     await page.waitForTimeout(3000);
 
-    // Wait for the flight results grid to be in DOM (it may be hidden off-screen)
-    await page.waitForSelector('[role="grid"]', { state: "attached", timeout: 30000 });
-
+    // Parse prices directly from body text (most reliable across DOM structure changes)
     const priceData = await page.evaluate(() => {
       const results: { price: number; currency: string; airline: string }[] = [];
+      const lines = (document.body.innerText ?? "").split("\n").map(l => l.trim()).filter(Boolean);
 
-      const rows = document.querySelectorAll('[role="row"]');
-      for (const row of rows) {
-        const text = row.textContent ?? "";
+      const AIRLINE_RE = /\b(STARLUX Airlines?|Cathay Pacific|EVA Air|Hong Kong Express|Hong Kong Airlines?|China Airlines?|Mandarin Airlines?|AirAsia|Japan Airlines?|ANA|Korean Air|Asiana)\b/i;
 
-        // Extract price like $291 or $1,234
-        const priceMatch = text.match(/\$(\d[\d,]*)/);
+      for (let i = 0; i < lines.length; i++) {
+        // Price lines look like "$291" or "$1,234" — standalone dollar amount
+        const priceMatch = lines[i].match(/^\$(\d[\d,]*)$/);
         if (!priceMatch) continue;
 
         const price = parseFloat(priceMatch[1].replace(/,/g, ""));
         if (isNaN(price) || price < 50 || price > 50000) continue;
 
-        // Try to match known airline names
-        const airlineMatch = text.match(
-          /\b(STARLUX Airlines?|Cathay Pacific|EVA Air|Hong Kong Express|Hong Kong Airlines?|China Airlines?|Mandarin Airlines?|AirAsia|Japan Airlines?|ANA|Korean Air|Asiana)\b/i
-        );
-        const airline = airlineMatch ? airlineMatch[1].trim() : "Unknown";
+        // Look for airline in surrounding lines (within 6 lines)
+        const context = lines.slice(i, i + 7).join(" ");
+        const airlineMatch = context.match(AIRLINE_RE);
+        const airline = airlineMatch ? airlineMatch[1] : "Unknown";
 
         results.push({ price, currency: "USD", airline });
       }
