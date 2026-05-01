@@ -8,7 +8,7 @@ import { evaluateAndAlert } from "@/lib/alerting/engine";
 const BUDGET_AIRLINES = [
   "hong kong express", "hk express", "airasia", "air asia",
   "peach", "scoot", "tigerair", "taiwan tigerair",
-  "vietjet", "spring airlines",
+  "vietjet", "spring airlines", "greater bay airlines", "greater bay",
 ];
 
 function isBudgetAirline(airline: string): boolean {

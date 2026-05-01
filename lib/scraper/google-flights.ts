@@ -68,6 +68,9 @@ export async function scrapeGoogleFlights(
         const airlineMatch = fullContext.match(AIRLINE_RE);
         const airline = airlineMatch ? airlineMatch[1] : "Unknown";
 
+        // Skip entries where airline is unidentified — likely premium/refundable fare rows
+        if (airline === "Unknown") continue;
+
         results.push({ price, currency: "USD", airline });
         matchedCtx.push(`$${price} | ${airline} | ...${lines.slice(Math.max(0, i - 5), i + 2).join(" | ")}...`);
       }
