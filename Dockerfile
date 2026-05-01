@@ -16,7 +16,7 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
-RUN npx prisma generate && next build
+RUN npm run build
 
 ENV NODE_ENV=production
 ENV CHROMIUM_PATH=/usr/bin/google-chrome-stable
