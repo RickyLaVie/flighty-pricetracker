@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import { updateRouteDates, softDeleteRoute, getRouteById } from "@/lib/routes/queries";
 import { updateRouteDatesSchema } from "@/lib/routes/validation";
