@@ -81,7 +81,7 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
   const checked = route.last_checked
     ? new Date(route.last_checked).toLocaleString()
     : "Never";
-  const bookingUrl = `https://www.google.com/travel/flights?q=Flights+from+${route.origin}+to+${route.destination}+on+${route.date_from.slice(0, 10)}&hl=en&curr=USD`;
+  const bookingUrl = `https://www.google.com/travel/flights?q=one+way+flights+from+${route.origin}+to+${route.destination}+on+${route.date_from.slice(0, 10)}&hl=en&curr=USD`;
 
   return (
     <div className="bg-white rounded-xl shadow p-5 flex flex-col gap-3">

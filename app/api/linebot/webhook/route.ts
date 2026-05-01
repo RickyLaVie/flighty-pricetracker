@@ -44,7 +44,7 @@ async function handleTextMessage(
       const checked = latest
         ? latest.scraped_at.toISOString().replace("T", " ").slice(0, 16) + " UTC"
         : "Never";
-      const bookingUrl = `https://www.google.com/travel/flights?q=Flights+from+${r.origin}+to+${r.destination}+on+${formatDate(r.date_from)}&hl=en&curr=USD`;
+      const bookingUrl = `https://www.google.com/travel/flights?q=one+way+flights+from+${r.origin}+to+${r.destination}+on+${formatDate(r.date_from)}&hl=en&curr=USD`;
       return (
         `${r.origin} → ${r.destination}\n` +
         `  Dates: ${formatDate(r.date_from)} – ${formatDate(r.date_to)}\n` +
