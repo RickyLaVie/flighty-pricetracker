@@ -33,8 +33,8 @@ export async function scrapeGoogleFlights(
     await page.waitForLoadState("networkidle", { timeout: 30000 }).catch(() => {});
     await page.waitForTimeout(3000);
 
-    // Wait for the flight results grid to load
-    await page.waitForSelector('[role="grid"]', { timeout: 30000 });
+    // Wait for the flight results grid to be in DOM (it may be hidden off-screen)
+    await page.waitForSelector('[role="grid"]', { state: "attached", timeout: 30000 });
 
     const priceData = await page.evaluate(() => {
       const results: { price: number; currency: string; airline: string }[] = [];
