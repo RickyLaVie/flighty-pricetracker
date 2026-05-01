@@ -59,7 +59,8 @@ export async function scrapeGoogleFlights(
 
     const lowest = priceData.reduce((a, b) => (a.price < b.price ? a : b));
     return { ...lowest, source: "google_flights" };
-  } catch {
+  } catch (err) {
+    console.error("[google-flights] scrape error:", err);
     return null;
   } finally {
     await context.close();

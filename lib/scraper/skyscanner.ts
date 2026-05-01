@@ -63,7 +63,8 @@ export async function scrapeSkyscanner(
 
     const lowest = priceData.reduce((a, b) => (a.price < b.price ? a : b));
     return { ...lowest, source: "skyscanner" };
-  } catch {
+  } catch (err) {
+    console.error("[skyscanner] scrape error:", err);
     return null;
   } finally {
     await context.close();
