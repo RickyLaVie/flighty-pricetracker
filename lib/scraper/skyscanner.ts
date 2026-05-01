@@ -28,6 +28,9 @@ export async function scrapeSkyscanner(
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
     await randomDelay();
 
+    console.log("[skyscanner] page title:", await page.title());
+    console.log("[skyscanner] page url:", page.url());
+
     // Wait for price cards to appear
     await page.waitForSelector('[data-testid="itinerary-list"]', { timeout: 20000 });
 

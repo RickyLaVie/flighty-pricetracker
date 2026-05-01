@@ -23,6 +23,9 @@ export async function scrapeGoogleFlights(
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
     await randomDelay();
 
+    console.log("[google-flights] page title:", await page.title());
+    console.log("[google-flights] page url:", page.url());
+
     // Wait for flight list items with role="listitem" containing price info
     await page.waitForSelector('[role="listitem"]', { timeout: 15000 });
 
