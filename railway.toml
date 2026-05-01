@@ -2,4 +2,5 @@
 builder = "dockerfile"
 
 [deploy]
+startCommand = "echo '=== DIAG ===' && echo 'CHROMIUM_PATH:'$CHROMIUM_PATH && ls /usr/bin/google-chrome-stable 2>&1 && echo '=== END DIAG ===' && npx prisma migrate deploy && npx tsx server.ts"
 restartPolicyType = "always"
