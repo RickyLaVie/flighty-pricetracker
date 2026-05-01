@@ -40,6 +40,8 @@ export async function scrapeGoogleFlights(
       const lines = (document.body.innerText ?? "").split("\n").map(l => l.trim()).filter(Boolean);
 
       const AIRLINE_RE = /\b(STARLUX Airlines?|Cathay Pacific|EVA Air|Hong Kong Express|HK Express|Hong Kong Airlines?|China Airlines?|Mandarin Airlines?|Greater Bay Airlines?|Air Macau|AirAsia|Japan Airlines?|ANA|Korean Air|Asiana|Peach|Scoot|Tigerair|Taiwan Tigerair|VietJet|Spring Airlines?)\b/i;
+      // Flight listings always have a departure/arrival time nearby; date-grid prices do not
+      const TIME_RE = /\d{1,2}:\d{2}\s*[AP]M/i;
 
       const debugPriceLines = lines.filter(l => /\$\d/.test(l)).slice(0, 20);
 
@@ -51,9 +53,14 @@ export async function scrapeGoogleFlights(
         const price = parseFloat(priceMatch[1].replace(/,/g, ""));
         if (isNaN(price) || price < 50 || price > 50000) continue;
 
-        // Look for airline in surrounding lines (within 12 lines after price)
-        const context = lines.slice(i, i + 13).join(" ");
-        const airlineMatch = context.match(AIRLINE_RE);
+        // Require a flight departure/arrival time in the preceding lines to exclude
+        // date-grid "cheapest day" prices that appear without time context
+        const contextBefore = lines.slice(Math.max(0, i - 20), i).join(" ");
+        if (!TIME_RE.test(contextBefore)) continue;
+
+        // Look for airline in surrounding lines
+        const fullContext = contextBefore + " " + lines.slice(i, i + 5).join(" ");
+        const airlineMatch = fullContext.match(AIRLINE_RE);
         const airline = airlineMatch ? airlineMatch[1] : "Unknown";
 
         results.push({ price, currency: "USD", airline });
