@@ -1,3 +1,6 @@
+[build]
+builder = "dockerfile"
+
 [deploy]
 startCommand = "npx prisma migrate deploy && npx tsx server.ts"
 restartPolicyType = "always"
