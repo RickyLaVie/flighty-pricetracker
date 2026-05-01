@@ -2,5 +2,5 @@
 builder = "dockerfile"
 
 [deploy]
-startCommand = "npx prisma migrate deploy && npx tsx server.ts"
+startCommand = "npx prisma migrate deploy && (npx tsx server.ts 2>&1; echo \"SERVER CRASH EXIT:$?\")"
 restartPolicyType = "always"
