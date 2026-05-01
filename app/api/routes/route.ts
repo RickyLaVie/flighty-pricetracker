@@ -18,6 +18,7 @@ export async function GET() {
     latest_price: r.snapshots[0]?.price ?? null,
     latest_currency: r.snapshots[0]?.currency ?? null,
     latest_airline: r.snapshots[0]?.airline ?? null,
+    latest_departure_date: r.snapshots[0]?.departure_date ?? null,
     last_checked: r.snapshots[0]?.scraped_at ?? null,
   }));
   return NextResponse.json(data);

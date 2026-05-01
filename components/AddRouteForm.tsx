@@ -11,6 +11,7 @@ interface RouteBasic {
   latest_price: null;
   latest_currency: null;
   latest_airline: null;
+  latest_departure_date: null;
   last_checked: null;
 }
 
@@ -59,7 +60,7 @@ export function AddRouteForm({ onAdded }: Props) {
     setBusy(false);
     if (res.ok) {
       const route = await res.json();
-      onAdded({ ...route, latest_price: null, latest_currency: null, latest_airline: null, last_checked: null });
+      onAdded({ ...route, latest_price: null, latest_currency: null, latest_airline: null, latest_departure_date: null, last_checked: null });
       setOrigin(""); setDestination(""); setDateFrom(""); setDateTo("");
       setOpen(false);
     } else {

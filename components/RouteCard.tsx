@@ -12,6 +12,7 @@ interface Route {
   latest_price: number | null;
   latest_currency: string | null;
   latest_airline: string | null;
+  latest_departure_date: string | null;
   last_checked: string | null;
 }
 
@@ -40,6 +41,7 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
         latest_price: data.price,
         latest_currency: data.currency,
         latest_airline: data.airline,
+        latest_departure_date: data.departure_date,
         last_checked: data.last_checked,
       });
     }
@@ -81,7 +83,8 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
   const checked = route.last_checked
     ? new Date(route.last_checked).toLocaleString()
     : "Never";
-  const bookingUrl = `https://www.google.com/travel/flights?q=one+way+flights+from+${route.origin}+to+${route.destination}+on+${route.date_from.slice(0, 10)}&hl=en&curr=USD`;
+  const bookingDate = route.latest_departure_date?.slice(0, 10) ?? route.date_from.slice(0, 10);
+  const bookingUrl = `https://www.google.com/travel/flights?q=one+way+flights+from+${route.origin}+to+${route.destination}+on+${bookingDate}&hl=en&curr=USD`;
 
   return (
     <div className="bg-white rounded-xl shadow p-5 flex flex-col gap-3">

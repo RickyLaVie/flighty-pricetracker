@@ -21,14 +21,15 @@ model Route {
 }
 
 model PriceSnapshot {
-  id         String   @id @default(cuid())
-  route_id   String
-  source     String
-  price      Float
-  currency   String   @db.VarChar(3)
-  airline    String
-  scraped_at DateTime @default(now())
-  route      Route    @relation(fields: [route_id], references: [id])
+  id             String    @id @default(cuid())
+  route_id       String
+  source         String
+  price          Float
+  currency       String    @db.VarChar(3)
+  airline        String
+  departure_date DateTime? @db.Date
+  scraped_at     DateTime  @default(now())
+  route          Route     @relation(fields: [route_id], references: [id])
 
   @@index([route_id, scraped_at])
 }

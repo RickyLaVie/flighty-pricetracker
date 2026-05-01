@@ -5,42 +5,57 @@ import { scrapeSkyscanner } from "./skyscanner";
 import { sendScraperFailureAlert } from "@/lib/linebot/notifications";
 import { evaluateAndAlert } from "@/lib/alerting/engine";
 
+function getDatesInRange(from: Date, to: Date): string[] {
+  const dates: string[] = [];
+  const current = new Date(from);
+  while (current <= to) {
+    dates.push(current.toISOString().split("T")[0]);
+    current.setDate(current.getDate() + 1);
+  }
+  return dates;
+}
+
 export async function runScrapeForRoute(routeId: string) {
   const route = await prisma.route.findUnique({ where: { id: routeId } });
   if (!route || route.status !== "active") return;
 
-  // Use the earliest departure date for scraping
-  const departureDate = route.date_from.toISOString().split("T")[0];
   const { origin, destination } = route;
+  const dates = getDatesInRange(route.date_from, route.date_to);
 
-  const sources = [
-    () => scrapeGoogleFlights(origin, destination, departureDate),
-    () => scrapeSkyscanner(origin, destination, departureDate),
-  ];
+  // Scrape all dates in range, keep the cheapest result overall
+  type Candidate = { price: number; currency: string; airline: string; source: string; departureDate: string };
+  let best: Candidate | null = null;
 
-  let successCount = 0;
-  for (const scrape of sources) {
-    try {
-      const result = await scrape();
-      if (result) {
-        const snapshot = await prisma.priceSnapshot.create({
-          data: {
-            route_id: routeId,
-            source: result.source,
-            price: result.price,
-            currency: result.currency,
-            airline: result.airline,
-          },
-        });
-        await evaluateAndAlert(routeId, snapshot.price);
-        successCount++;
+  for (const departureDate of dates) {
+    const sources = [
+      () => scrapeGoogleFlights(origin, destination, departureDate),
+      () => scrapeSkyscanner(origin, destination, departureDate),
+    ];
+    for (const scrape of sources) {
+      try {
+        const result = await scrape();
+        if (result && (!best || result.price < best.price)) {
+          best = { ...result, departureDate };
+        }
+      } catch (err) {
+        console.error(`Scrape error for route ${routeId} on ${departureDate}:`, err);
       }
-    } catch (err) {
-      console.error(`Scrape error for route ${routeId}:`, err);
     }
   }
 
-  if (successCount === 0) {
+  if (best) {
+    const snapshot = await prisma.priceSnapshot.create({
+      data: {
+        route_id: routeId,
+        source: best.source,
+        price: best.price,
+        currency: best.currency,
+        airline: best.airline,
+        departure_date: new Date(best.departureDate),
+      },
+    });
+    await evaluateAndAlert(routeId, snapshot.price);
+  } else {
     await checkConsecutiveFailures(routeId);
   }
 }
