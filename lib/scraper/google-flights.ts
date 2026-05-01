@@ -61,6 +61,8 @@ export async function scrapeGoogleFlights(
       return results;
     });
 
+    console.log(`[google-flights] found ${priceData.length} price entries, sample:`, priceData.slice(0, 3));
+
     if (priceData.length === 0) return null;
 
     const lowest = priceData.reduce((a, b) => (a.price < b.price ? a : b));
