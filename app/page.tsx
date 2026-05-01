@@ -12,6 +12,7 @@ interface Route {
   date_to: string;
   latest_price: number | null;
   latest_currency: string | null;
+  latest_airline: string | null;
   last_checked: string | null;
 }
 
