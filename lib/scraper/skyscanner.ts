@@ -31,6 +31,12 @@ export async function scrapeSkyscanner(
     console.log("[skyscanner] page title:", await page.title());
     console.log("[skyscanner] page url:", page.url());
 
+    // Bail out if Skyscanner redirected to CAPTCHA
+    if (page.url().includes("captcha")) {
+      console.log("[skyscanner] CAPTCHA detected, skipping");
+      return null;
+    }
+
     // Wait for price cards to appear
     await page.waitForSelector('[data-testid="itinerary-list"]', { timeout: 20000 });
 

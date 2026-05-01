@@ -20,14 +20,24 @@ export async function scrapeGoogleFlights(
 
   try {
     const url = buildGoogleFlightsUrl(origin, destination, departureDate);
-    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
-    await randomDelay();
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
+
+    // Dismiss cookie consent dialog if present
+    try {
+      await page.locator('button:has-text("Accept all")').first().click({ timeout: 3000 });
+    } catch {
+      // no consent dialog
+    }
+
+    // Wait for network to settle after JS renders flight results
+    await page.waitForLoadState("networkidle", { timeout: 30000 }).catch(() => {});
+    await page.waitForTimeout(3000);
 
     console.log("[google-flights] page title:", await page.title());
     console.log("[google-flights] page url:", page.url());
 
     // Wait for flight list items with role="listitem" containing price info
-    await page.waitForSelector('[role="listitem"]', { timeout: 15000 });
+    await page.waitForSelector('[role="listitem"]', { timeout: 30000 });
 
     // Extract all price spans — Google Flights uses aria-label patterns
     const priceData = await page.evaluate(() => {
