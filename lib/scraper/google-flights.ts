@@ -36,6 +36,15 @@ export async function scrapeGoogleFlights(
     console.log("[google-flights] page title:", await page.title());
     console.log("[google-flights] page url:", page.url());
 
+    // Dump page structure for debugging
+    const debugInfo = await page.evaluate(() => {
+      const rolesFound = [...new Set(Array.from(document.querySelectorAll("[role]")).map(el => el.getAttribute("role")))];
+      const bodySnippet = document.body.innerText.slice(0, 1500);
+      return { rolesFound, bodySnippet };
+    });
+    console.log("[google-flights] roles found:", debugInfo.rolesFound);
+    console.log("[google-flights] body text:", debugInfo.bodySnippet);
+
     // Wait for flight list items with role="listitem" containing price info
     await page.waitForSelector('[role="listitem"]', { timeout: 30000 });
 
