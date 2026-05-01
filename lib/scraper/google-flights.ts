@@ -20,7 +20,7 @@ export async function scrapeGoogleFlights(
 
   try {
     const url = buildGoogleFlightsUrl(origin, destination, departureDate);
-    await page.goto(url, { waitUntil: "networkidle", timeout: 30000 });
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
     await randomDelay();
 
     // Wait for flight list items with role="listitem" containing price info

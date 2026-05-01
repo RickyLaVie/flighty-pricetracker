@@ -42,5 +42,12 @@ export async function launchBrowser(): Promise<Browser> {
   return chromium.launch({
     headless: true,
     executablePath: process.env.CHROMIUM_PATH || undefined,
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage",  // use /tmp instead of /dev/shm (Docker fix)
+      "--disable-gpu",
+      "--single-process",
+    ],
   });
 }

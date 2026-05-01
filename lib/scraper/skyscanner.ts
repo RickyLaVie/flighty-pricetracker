@@ -25,7 +25,7 @@ export async function scrapeSkyscanner(
 
   try {
     const url = buildSkyscannerUrl(origin, destination, departureDate);
-    await page.goto(url, { waitUntil: "networkidle", timeout: 30000 });
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
     await randomDelay();
 
     // Wait for price cards to appear
