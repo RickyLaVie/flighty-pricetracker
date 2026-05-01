@@ -50,12 +50,7 @@ export async function scrapeGoogleFlights(
 
         // Skip header summary prices like "Cheapest from $280"
         const prevLine = i > 0 ? lines[i - 1].toLowerCase() : "";
-        const nextLine = i < lines.length - 1 ? lines[i + 1] : "";
-        console.log(`[google-flights] price candidate $${price} | prev="${prevLine}" | next="${nextLine}"`);
-        if (/^from$|cheapest|starting|price/.test(prevLine)) {
-          console.log(`[google-flights] skipping $${price} (header)`);
-          continue;
-        }
+        if (/^from$|cheapest|starting|price/.test(prevLine)) continue;
 
         // Look for airline in surrounding lines (within 6 lines)
         const context = lines.slice(i, i + 7).join(" ");
@@ -67,13 +62,9 @@ export async function scrapeGoogleFlights(
       return results;
     });
 
-    if (priceData.length === 0) {
-      console.log("[google-flights] no prices found");
-      return null;
-    }
+    if (priceData.length === 0) return null;
 
     const lowest = priceData.reduce((a, b) => (a.price < b.price ? a : b));
-    console.log("[google-flights] lowest price:", lowest);
     return { ...lowest, source: "google_flights" };
   } catch (err) {
     console.error("[google-flights] scrape error:", err);
