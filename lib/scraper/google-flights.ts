@@ -40,8 +40,8 @@ export async function scrapeGoogleFlights(
       const lines = (document.body.innerText ?? "").split("\n").map(l => l.trim()).filter(Boolean);
 
       const AIRLINE_RE = /\b(STARLUX Airlines?|Cathay Pacific|EVA Air|Hong Kong Express|HK Express|Hong Kong Airlines?|China Airlines?|Mandarin Airlines?|Greater Bay Airlines?|Air Macau|AirAsia|Japan Airlines?|ANA|Korean Air|Asiana|Peach|Scoot|Tigerair|Taiwan Tigerair|VietJet|Spring Airlines?)\b/i;
-      // Flight listings always have a departure/arrival time nearby; date-grid prices do not
-      const TIME_RE = /\d{1,2}:\d{2}\s*[AP]M/i;
+      // Match both 12-hr ("6:00 AM") and 24-hr ("06:00") flight times
+      const TIME_RE = /\b\d{1,2}:\d{2}/;
 
       const debugPriceLines = lines.filter(l => /\$\d/.test(l)).slice(0, 20);
       const matchedCtx: string[] = [];
@@ -54,8 +54,12 @@ export async function scrapeGoogleFlights(
         const price = parseFloat(priceMatch[1].replace(/,/g, ""));
         if (isNaN(price) || price < 50 || price > 50000) continue;
 
+        // Skip calendar-grid cells: price directly preceded by a short date line like "Jun 24" or "24"
+        const prevLine = lines[i - 1] ?? "";
+        if (/^[A-Z][a-z]{2}\s+\d{1,2}$/.test(prevLine) || /^\d{1,2}$/.test(prevLine)) continue;
+
         // Require a flight departure/arrival time in the preceding lines to exclude
-        // date-grid "cheapest day" prices that appear without time context
+        // any remaining date-grid "cheapest day" prices
         const contextBefore = lines.slice(Math.max(0, i - 20), i).join(" ");
         if (!TIME_RE.test(contextBefore)) continue;
 
