@@ -76,9 +76,13 @@ export async function POST(req: Request) {
       event.type === "message" &&
       (event as MessageEvent).message?.type === "text"
     ) {
-      await handleTextMessage(
-        event as MessageEvent & { message: TextMessageContent }
-      );
+      try {
+        await handleTextMessage(
+          event as MessageEvent & { message: TextMessageContent }
+        );
+      } catch (err) {
+        console.error("[webhook] handleTextMessage error:", err);
+      }
     }
   }
 
