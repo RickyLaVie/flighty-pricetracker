@@ -39,5 +39,8 @@ export async function createStealthContext(browser: Browser): Promise<BrowserCon
 }
 
 export async function launchBrowser(): Promise<Browser> {
-  return chromium.launch({ headless: true });
+  return chromium.launch({
+    headless: true,
+    executablePath: process.env.CHROMIUM_PATH || undefined,
+  });
 }
