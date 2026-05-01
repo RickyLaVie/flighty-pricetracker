@@ -4,7 +4,8 @@ import { createRouteSchema } from "@/lib/routes/validation";
 
 export async function GET() {
   const routes = await listActiveRoutes();
-  const data = routes.map((r) => ({
+  type RouteWithSnapshot = Awaited<ReturnType<typeof listActiveRoutes>>[number];
+  const data = routes.map((r: RouteWithSnapshot) => ({
     id: r.id,
     origin: r.origin,
     destination: r.destination,
