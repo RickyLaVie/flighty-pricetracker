@@ -33,46 +33,30 @@ export async function scrapeGoogleFlights(
     await page.waitForLoadState("networkidle", { timeout: 30000 }).catch(() => {});
     await page.waitForTimeout(3000);
 
-    console.log("[google-flights] page title:", await page.title());
-    console.log("[google-flights] page url:", page.url());
+    // Wait for the flight results grid to load
+    await page.waitForSelector('[role="grid"]', { timeout: 30000 });
 
-    // Dump page structure for debugging
-    const debugInfo = await page.evaluate(() => {
-      const rolesFound = [...new Set(Array.from(document.querySelectorAll("[role]")).map(el => el.getAttribute("role")))];
-      const bodySnippet = document.body.innerText.slice(0, 1500);
-      return { rolesFound, bodySnippet };
-    });
-    console.log("[google-flights] roles found:", debugInfo.rolesFound);
-    console.log("[google-flights] body text:", debugInfo.bodySnippet);
-
-    // Wait for flight list items with role="listitem" containing price info
-    await page.waitForSelector('[role="listitem"]', { timeout: 30000 });
-
-    // Extract all price spans — Google Flights uses aria-label patterns
     const priceData = await page.evaluate(() => {
       const results: { price: number; currency: string; airline: string }[] = [];
 
-      const items = document.querySelectorAll('[role="listitem"]');
-      for (const item of items) {
-        // Price is typically in a span with a currency symbol
-        const priceEl = item.querySelector('[aria-label*="$"], [aria-label*="TWD"], [aria-label*="USD"], [aria-label*="JPY"]')
-          ?? item.querySelector('.YMlIz, .FpEdX span, [data-gs]');
-        const airlineEl = item.querySelector('[data-testid="airline-name"]')
-          ?? item.querySelector('.sSHqwe, .h1fkLb');
+      const rows = document.querySelectorAll('[role="row"]');
+      for (const row of rows) {
+        const text = row.textContent ?? "";
 
-        if (!priceEl) continue;
+        // Extract price like $291 or $1,234
+        const priceMatch = text.match(/\$(\d[\d,]*)/);
+        if (!priceMatch) continue;
 
-        const rawText = priceEl.textContent?.replace(/,/g, "").trim() ?? "";
-        const numMatch = rawText.match(/[\d.]+/);
-        if (!numMatch) continue;
+        const price = parseFloat(priceMatch[1].replace(/,/g, ""));
+        if (isNaN(price) || price < 50 || price > 50000) continue;
 
-        const price = parseFloat(numMatch[0]);
-        if (isNaN(price) || price <= 0) continue;
+        // Try to match known airline names
+        const airlineMatch = text.match(
+          /\b(STARLUX Airlines?|Cathay Pacific|EVA Air|Hong Kong Express|Hong Kong Airlines?|China Airlines?|Mandarin Airlines?|AirAsia|Japan Airlines?|ANA|Korean Air|Asiana)\b/i
+        );
+        const airline = airlineMatch ? airlineMatch[1].trim() : "Unknown";
 
-        const currency = rawText.includes("$") ? "USD" : rawText.slice(0, 3).trim() || "USD";
-        const airline = airlineEl?.textContent?.trim() ?? "Unknown";
-
-        results.push({ price, currency, airline });
+        results.push({ price, currency: "USD", airline });
       }
       return results;
     });
