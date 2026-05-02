@@ -36,20 +36,28 @@ export async function scrapeGoogleFlights(
     await page.waitForTimeout(3000);
 
     // Switch to "Cheapest" tab so budget airlines like HK Express appear at the top
-    try {
-      // Try multiple selectors in case Google Flights changes the DOM structure
-      const cheapestTab =
-        page.locator('[role="tab"]:has-text("Cheapest")').first();
-      const altTab =
-        page.locator('div:has-text("Cheapest from")').first();
-      const target = (await cheapestTab.isVisible({ timeout: 3000 }).catch(() => false))
-        ? cheapestTab
-        : altTab;
-      await target.click({ timeout: 5000 });
-      await page.waitForLoadState("networkidle", { timeout: 15000 }).catch(() => {});
-      await page.waitForTimeout(2000);
-    } catch {
-      // no Cheapest tab found, continue with current view
+    {
+      const tabSelectors = [
+        '[role="tab"]:has-text("Cheapest")',
+        'button:has-text("Cheapest")',
+        '[jsname]:has-text("Cheapest from")',
+        'div[data-ved]:has-text("Cheapest")',
+      ];
+      let clicked = false;
+      for (const sel of tabSelectors) {
+        try {
+          const el = page.locator(sel).first();
+          if (await el.isVisible({ timeout: 2000 })) {
+            await el.click({ timeout: 4000 });
+            clicked = true;
+            console.log(`[google-flights] Cheapest tab clicked (${sel})`);
+            break;
+          }
+        } catch { /* try next selector */ }
+      }
+      if (!clicked) console.log("[google-flights] Cheapest tab not found");
+      await page.waitForLoadState("networkidle", { timeout: 20000 }).catch(() => {});
+      await page.waitForTimeout(3000);
     }
 
     // Scroll down to load any results that render below the fold
