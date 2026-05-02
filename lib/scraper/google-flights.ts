@@ -35,7 +35,16 @@ export async function scrapeGoogleFlights(
     await page.waitForLoadState("networkidle", { timeout: 30000 }).catch(() => {});
     await page.waitForTimeout(3000);
 
-    // Scroll down to load budget airline results that render below the fold
+    // Switch to "Cheapest" tab so budget airlines like HK Express appear at the top
+    try {
+      await page.locator('[role="tab"]:has-text("Cheapest")').first().click({ timeout: 5000 });
+      await page.waitForLoadState("networkidle", { timeout: 15000 }).catch(() => {});
+      await page.waitForTimeout(2000);
+    } catch {
+      // no Cheapest tab found, continue with current view
+    }
+
+    // Scroll down to load any results that render below the fold
     await page.evaluate(() => window.scrollBy(0, 3000));
     await page.waitForTimeout(2000);
 
