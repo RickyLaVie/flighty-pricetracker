@@ -4,23 +4,24 @@ import type { ScrapeResult } from "./types";
 function buildGoogleFlightsUrl(
   origin: string,
   destination: string,
-  date: string
+  departureDate: string,
+  returnDate: string
 ): string {
-  return `https://www.google.com/travel/flights?q=one+way+flights+from+${origin}+to+${destination}+on+${date}&hl=en&curr=USD`;
+  return `https://www.google.com/travel/flights?q=flights+from+${origin}+to+${destination}+on+${departureDate}+returning+${returnDate}&hl=en&curr=USD`;
 }
 
 export async function scrapeGoogleFlights(
   origin: string,
   destination: string,
   departureDate: string,
-  _returnDate?: string
+  returnDate: string
 ): Promise<ScrapeResult | null> {
   const browser = await launchBrowser();
   const context = await createStealthContext(browser);
   const page = await context.newPage();
 
   try {
-    const url = buildGoogleFlightsUrl(origin, destination, departureDate);
+    const url = buildGoogleFlightsUrl(origin, destination, departureDate, returnDate);
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
 
     // Dismiss cookie consent dialog if present
@@ -33,6 +34,10 @@ export async function scrapeGoogleFlights(
     // Wait for network to settle after JS renders flight results
     await page.waitForLoadState("networkidle", { timeout: 30000 }).catch(() => {});
     await page.waitForTimeout(3000);
+
+    // Scroll down to load budget airline results that render below the fold
+    await page.evaluate(() => window.scrollBy(0, 3000));
+    await page.waitForTimeout(2000);
 
     // Parse prices directly from body text (most reliable across DOM structure changes)
     const { priceData, debugPriceLines, matchedCtx } = await page.evaluate(() => {
