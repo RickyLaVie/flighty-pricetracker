@@ -58,6 +58,7 @@ export async function scrapeGoogleFlights(
       if (!clicked) console.log("[google-flights] Cheapest tab not found");
       await page.waitForLoadState("networkidle", { timeout: 20000 }).catch(() => {});
       await page.waitForTimeout(3000);
+      console.log("[google-flights] URL after Cheapest click:", page.url().substring(0, 300));
     }
 
     // Scroll down to load any results that render below the fold
