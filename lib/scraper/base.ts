@@ -29,13 +29,22 @@ export async function randomDelay() {
 }
 
 export async function createStealthContext(browser: Browser): Promise<BrowserContext> {
-  return browser.newContext({
+  const ctx = await browser.newContext({
     userAgent: randomUserAgent(),
     viewport: randomViewport(),
-    locale: "en-US",
-    timezoneId: "America/New_York",
-    extraHTTPHeaders: { "Accept-Language": "en-US,en;q=0.9" },
+    locale: "zh-TW",
+    timezoneId: "Asia/Taipei",
+    extraHTTPHeaders: { "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.8" },
   });
+  // Mask automation signals that Google uses for bot detection
+  await ctx.addInitScript(() => {
+    Object.defineProperty(navigator, "webdriver", { get: () => undefined });
+    // @ts-ignore
+    delete window.navigator.__proto__.webdriver;
+    Object.defineProperty(navigator, "languages", { get: () => ["zh-TW", "zh", "en"] });
+    Object.defineProperty(navigator, "plugins", { get: () => [1, 2, 3, 4, 5] });
+  });
+  return ctx;
 }
 
 export async function launchBrowser(): Promise<Browser> {
@@ -45,9 +54,9 @@ export async function launchBrowser(): Promise<Browser> {
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage",  // use /tmp instead of /dev/shm (Docker fix)
+      "--disable-dev-shm-usage",
       "--disable-gpu",
-      "--single-process",
+      "--disable-blink-features=AutomationControlled",
     ],
   });
 }
