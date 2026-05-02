@@ -7,7 +7,7 @@ function buildGoogleFlightsUrl(
   departureDate: string,
   returnDate: string
 ): string {
-  return `https://www.google.com/travel/flights?q=flights+from+${origin}+to+${destination}+on+${departureDate}+returning+${returnDate}&hl=en&curr=USD`;
+  return `https://www.google.com/travel/flights?q=flights+from+${origin}+to+${destination}+on+${departureDate}+returning+${returnDate}&hl=en&curr=USD&gl=tw`;
 }
 
 export async function scrapeGoogleFlights(
@@ -37,7 +37,15 @@ export async function scrapeGoogleFlights(
 
     // Switch to "Cheapest" tab so budget airlines like HK Express appear at the top
     try {
-      await page.locator('[role="tab"]:has-text("Cheapest")').first().click({ timeout: 5000 });
+      // Try multiple selectors in case Google Flights changes the DOM structure
+      const cheapestTab =
+        page.locator('[role="tab"]:has-text("Cheapest")').first();
+      const altTab =
+        page.locator('div:has-text("Cheapest from")').first();
+      const target = (await cheapestTab.isVisible({ timeout: 3000 }).catch(() => false))
+        ? cheapestTab
+        : altTab;
+      await target.click({ timeout: 5000 });
       await page.waitForLoadState("networkidle", { timeout: 15000 }).catch(() => {});
       await page.waitForTimeout(2000);
     } catch {
