@@ -22,11 +22,14 @@ export function Header() {
         </Link>
 
         <div className="flex items-center gap-2">
+          {/* Language toggle — active uses darker orange for white-text contrast */}
           <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold">
             <button
               onClick={() => setLang("zh")}
               className={`px-3 py-1.5 transition-colors ${
-                lang === "zh" ? "bg-brand text-white" : "bg-white text-gray-500 hover:bg-brand-light"
+                lang === "zh"
+                  ? "bg-brand-hover text-white"
+                  : "bg-white text-gray-600 hover:bg-gray-50"
               }`}
             >
               繁中
@@ -34,7 +37,9 @@ export function Header() {
             <button
               onClick={() => setLang("en")}
               className={`px-3 py-1.5 transition-colors ${
-                lang === "en" ? "bg-brand text-white" : "bg-white text-gray-500 hover:bg-brand-light"
+                lang === "en"
+                  ? "bg-brand-hover text-white"
+                  : "bg-white text-gray-600 hover:bg-gray-50"
               }`}
             >
               EN
@@ -44,7 +49,7 @@ export function Header() {
           <select
             value={currency}
             onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
-            className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand/30 cursor-pointer font-medium"
+            className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs bg-white text-gray-800 font-medium focus:outline-none focus:ring-2 focus:ring-brand/30 cursor-pointer"
           >
             {CURRENCIES.map((c) => (
               <option key={c.code} value={c.code}>

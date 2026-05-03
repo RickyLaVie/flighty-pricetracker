@@ -25,12 +25,17 @@ function sourceLabel(source: string | null): string {
   return source.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function buildBookingUrl(source: string | null, origin: string, destination: string, dateFrom: string, dateTo: string): string {
+function buildBookingUrl(
+  source: string | null,
+  origin: string,
+  destination: string,
+  dateFrom: string,
+  dateTo: string
+): string {
   const dep = dateFrom.slice(0, 10);
   const ret = dateTo.slice(0, 10);
-  if (source === "momondo") {
+  if (source === "momondo")
     return `https://www.momondo.com/flight-search/${origin}-${destination}/${dep}/${ret}?adults=1&sort=price_a`;
-  }
   if (source === "skyscanner") {
     const d = new Date(dep);
     const yy = String(d.getFullYear()).slice(2);
@@ -95,12 +100,23 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
     const res = await fetch(`/api/routes/${route.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date_from: dateFrom, date_to: dateTo, exclude_budget_airlines: excludeBudget, require_checked_baggage: requireBaggage }),
+      body: JSON.stringify({
+        date_from: dateFrom,
+        date_to: dateTo,
+        exclude_budget_airlines: excludeBudget,
+        require_checked_baggage: requireBaggage,
+      }),
     });
     setBusy(false);
     if (res.ok) {
       const updated = await res.json();
-      onUpdated({ ...route, date_from: updated.date_from, date_to: updated.date_to, exclude_budget_airlines: updated.exclude_budget_airlines, require_checked_baggage: updated.require_checked_baggage });
+      onUpdated({
+        ...route,
+        date_from: updated.date_from,
+        date_to: updated.date_to,
+        exclude_budget_airlines: updated.exclude_budget_airlines,
+        require_checked_baggage: updated.require_checked_baggage,
+      });
       setEditing(false);
     } else {
       setError("Failed to update. Please try again.");
@@ -111,36 +127,43 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
   const checked = route.last_checked
     ? new Date(route.last_checked).toLocaleString()
     : "Never";
-  const bookingUrl = buildBookingUrl(route.latest_source, route.origin, route.destination, route.date_from, route.date_to);
+  const bookingUrl = buildBookingUrl(
+    route.latest_source,
+    route.origin,
+    route.destination,
+    route.date_from,
+    route.date_to
+  );
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col gap-3">
-      {/* Header row */}
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-2">
         <Link
           href={`/routes/${route.id}`}
-          className="text-xl font-extrabold text-gray-900 hover:text-brand transition-colors"
+          className="text-xl font-extrabold text-gray-900 hover:text-brand transition-colors leading-tight"
         >
           {route.origin} → {route.destination}
         </Link>
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5 shrink-0">
+          {/* White bg + brand border = clear orange text on white */}
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="text-xs px-3 py-1.5 rounded-lg bg-brand-light text-brand font-semibold hover:bg-brand-muted disabled:opacity-50 transition-colors"
+            className="text-xs px-3 py-1.5 rounded-lg border border-brand text-brand font-semibold bg-white hover:bg-brand-light disabled:opacity-50 transition-colors"
           >
             {refreshing ? "…" : t.refreshNow}
           </button>
           <button
             onClick={() => setEditing((v) => !v)}
-            className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 font-semibold hover:bg-gray-200 transition-colors"
+            className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition-colors"
           >
             {lang === "zh" ? "編輯" : "Edit"}
           </button>
           <button
             onClick={handleDelete}
             disabled={busy}
-            className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-400 font-semibold hover:bg-red-50 hover:text-red-500 disabled:opacity-50 transition-colors"
+            className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 font-semibold hover:bg-red-100 hover:text-red-600 disabled:opacity-50 transition-colors"
           >
             {lang === "zh" ? "刪除" : "Delete"}
           </button>
@@ -151,26 +174,57 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
       {editing ? (
         <form onSubmit={handleEdit} className="flex flex-col gap-2">
           <div className="flex gap-2">
-            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="border rounded-lg px-2 py-1.5 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-brand/30" required />
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="border rounded-lg px-2 py-1.5 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-brand/30"
+              required
+            />
             <span className="self-center text-gray-400">–</span>
-            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="border rounded-lg px-2 py-1.5 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-brand/30" required />
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="border rounded-lg px-2 py-1.5 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-brand/30"
+              required
+            />
           </div>
           <div className="flex flex-col gap-1 text-sm text-gray-700">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={requireBaggage} onChange={e => setRequireBaggage(e.target.checked)} className="rounded accent-brand" />
+              <input
+                type="checkbox"
+                checked={requireBaggage}
+                onChange={(e) => setRequireBaggage(e.target.checked)}
+                className="rounded accent-brand"
+              />
               {lang === "zh" ? "需含托運行李" : "Require checked baggage"}
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={excludeBudget} onChange={e => setExcludeBudget(e.target.checked)} className="rounded accent-brand" />
+              <input
+                type="checkbox"
+                checked={excludeBudget}
+                onChange={(e) => setExcludeBudget(e.target.checked)}
+                className="rounded accent-brand"
+              />
               {lang === "zh" ? "排除廉價航空" : "Exclude budget airlines"}
             </label>
           </div>
           {error && <p className="text-red-500 text-xs">{error}</p>}
           <div className="flex gap-2">
-            <button type="submit" disabled={busy} className="text-sm px-4 py-1.5 rounded-lg bg-brand text-white font-semibold hover:bg-brand-hover disabled:opacity-50 transition-colors">
+            {/* Dark bg primary = white text, clear */}
+            <button
+              type="submit"
+              disabled={busy}
+              className="text-sm px-4 py-1.5 rounded-lg bg-brand-hover text-white font-bold hover:bg-brand disabled:opacity-50 transition-colors"
+            >
               {lang === "zh" ? "儲存" : "Save"}
             </button>
-            <button type="button" onClick={() => setEditing(false)} className="text-sm px-4 py-1.5 rounded-lg bg-gray-100 text-gray-600 font-semibold hover:bg-gray-200 transition-colors">
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              className="text-sm px-4 py-1.5 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors"
+            >
               {lang === "zh" ? "取消" : "Cancel"}
             </button>
           </div>
@@ -178,24 +232,32 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
       ) : (
         <div className="text-sm text-gray-400 flex flex-wrap items-center gap-2">
           <span>{route.date_from.slice(0, 10)} – {route.date_to.slice(0, 10)}</span>
-          {route.require_checked_baggage && <span className="bg-orange-50 text-brand px-2 py-0.5 rounded-full text-xs font-medium">{lang === "zh" ? "含托運行李" : "Checked baggage"}</span>}
-          {route.exclude_budget_airlines && <span className="bg-orange-50 text-brand px-2 py-0.5 rounded-full text-xs font-medium">{lang === "zh" ? "排除廉航" : "No budget airlines"}</span>}
+          {route.require_checked_baggage && (
+            <span className="bg-brand-light text-brand-hover px-2 py-0.5 rounded-full text-xs font-semibold">
+              {lang === "zh" ? "含托運行李" : "Checked baggage"}
+            </span>
+          )}
+          {route.exclude_budget_airlines && (
+            <span className="bg-brand-light text-brand-hover px-2 py-0.5 rounded-full text-xs font-semibold">
+              {lang === "zh" ? "排除廉航" : "No budget airlines"}
+            </span>
+          )}
         </div>
       )}
 
-      {/* Price row */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-gray-50">
+      {/* Price + actions */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100">
         <div>
           <div className="text-2xl font-extrabold text-gray-900">{price}</div>
-          <div className="text-xs text-gray-400 mt-0.5 flex items-center gap-1.5">
+          <div className="text-xs text-gray-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
             {route.latest_airline && route.latest_airline !== "Unknown" && (
               <span>✈ {route.latest_airline}</span>
             )}
             {route.latest_source && (
-              <span className="text-gray-300">·</span>
-            )}
-            {route.latest_source && (
-              <span>via {sourceLabel(route.latest_source)}</span>
+              <>
+                <span className="text-gray-300">·</span>
+                <span>via {sourceLabel(route.latest_source)}</span>
+              </>
             )}
           </div>
           <div className="text-xs text-gray-300 mt-0.5">🕐 {checked}</div>
@@ -214,7 +276,7 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
           )}
           <Link
             href={`/routes/${route.id}`}
-            className="px-4 py-1.5 rounded-xl bg-gray-100 text-gray-500 text-sm font-semibold hover:bg-gray-200 transition-colors"
+            className="px-4 py-1.5 rounded-xl bg-gray-100 text-gray-700 text-sm font-semibold hover:bg-gray-200 transition-colors"
           >
             {t.priceHistory}
           </Link>

@@ -1,1 +1,12 @@
 @import "tailwindcss";
+
+@theme {
+  /* Flighty brand colours */
+  --color-brand:       #E8431A;
+  --color-brand-hover: #C83915;
+  --color-brand-light: #FFF2EE;
+  --color-brand-muted: #FDDDD4;
+
+  /* Rounded system font stack */
+  --font-sans: var(--font-nunito), ui-rounded, system-ui, sans-serif;
+}
