@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { listActiveRoutes } from "@/lib/routes/queries";
 import { scrapeGoogleFlights } from "./google-flights";
 import { scrapeSkyscanner } from "./skyscanner";
+import { scrapeMomondo } from "./momondo";
 import { sendScraperFailureAlert } from "@/lib/linebot/notifications";
 import { evaluateAndAlert } from "@/lib/alerting/engine";
 
@@ -25,6 +26,7 @@ export async function runScrapeForRoute(routeId: string) {
   const returnDate = route.date_to.toISOString().split("T")[0];
 
   const sources = [
+    () => scrapeMomondo(origin, destination, departureDate, returnDate),
     () => scrapeGoogleFlights(origin, destination, departureDate, returnDate),
     () => scrapeSkyscanner(origin, destination, departureDate, returnDate),
   ];
