@@ -26,6 +26,7 @@ export async function POST(
     price: latest?.price ?? null,
     currency: latest?.currency ?? null,
     airline: latest?.airline ?? null,
+    source: latest?.source ?? null,
     departure_date: latest?.departure_date ?? null,
     last_checked: latest?.scraped_at ?? null,
   });

@@ -13,6 +13,7 @@ interface Route {
   latest_price: number | null;
   latest_currency: string | null;
   latest_airline: string | null;
+  latest_source: string | null;
   latest_departure_date: string | null;
   last_checked: string | null;
   exclude_budget_airlines: boolean;

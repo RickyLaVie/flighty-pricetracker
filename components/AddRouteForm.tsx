@@ -11,6 +11,7 @@ interface RouteBasic {
   latest_price: null;
   latest_currency: null;
   latest_airline: null;
+  latest_source: null;
   latest_departure_date: null;
   last_checked: null;
   exclude_budget_airlines: boolean;
@@ -66,7 +67,7 @@ export function AddRouteForm({ onAdded }: Props) {
     setBusy(false);
     if (res.ok) {
       const route = await res.json();
-      onAdded({ ...route, latest_price: null, latest_currency: null, latest_airline: null, latest_departure_date: null, last_checked: null, exclude_budget_airlines: excludeBudget, require_checked_baggage: requireBaggage });
+      onAdded({ ...route, latest_price: null, latest_currency: null, latest_airline: null, latest_source: null, latest_departure_date: null, last_checked: null, exclude_budget_airlines: excludeBudget, require_checked_baggage: requireBaggage });
       setOrigin(""); setDestination(""); setDateFrom(""); setDateTo("");
       setOpen(false);
     } else {

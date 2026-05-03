@@ -12,10 +12,32 @@ interface Route {
   latest_price: number | null;
   latest_currency: string | null;
   latest_airline: string | null;
+  latest_source: string | null;
   latest_departure_date: string | null;
   last_checked: string | null;
   exclude_budget_airlines: boolean;
   require_checked_baggage: boolean;
+}
+
+function sourceLabel(source: string | null): string {
+  if (!source) return "";
+  return source.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function buildBookingUrl(source: string | null, origin: string, destination: string, dateFrom: string, dateTo: string): string {
+  const dep = dateFrom.slice(0, 10);
+  const ret = dateTo.slice(0, 10);
+  if (source === "momondo") {
+    return `https://www.momondo.com/flight-search/${origin}-${destination}/${dep}/${ret}?adults=1&sort=price_a`;
+  }
+  if (source === "skyscanner") {
+    const d = new Date(dep);
+    const yy = String(d.getFullYear()).slice(2);
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `https://www.skyscanner.com/flights/${origin.toLowerCase()}/${destination.toLowerCase()}/${yy}${mm}${dd}/?adults=1&cabinclass=economy&rtn=1`;
+  }
+  return `https://www.google.com/travel/flights?q=flights+from+${origin}+to+${destination}+on+${dep}+returning+${ret}&hl=en&curr=USD`;
 }
 
 interface Props {
@@ -45,6 +67,7 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
         latest_price: data.price,
         latest_currency: data.currency,
         latest_airline: data.airline,
+        latest_source: data.source,
         latest_departure_date: data.departure_date,
         last_checked: data.last_checked,
       });
@@ -87,7 +110,7 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
   const checked = route.last_checked
     ? new Date(route.last_checked).toLocaleString()
     : "Never";
-  const bookingUrl = `https://www.google.com/travel/flights?q=flights+from+${route.origin}+to+${route.destination}+on+${route.date_from.slice(0, 10)}+returning+${route.date_to.slice(0, 10)}&hl=en&curr=USD`;
+  const bookingUrl = buildBookingUrl(route.latest_source, route.origin, route.destination, route.date_from, route.date_to);
 
   return (
     <div className="bg-white rounded-xl shadow p-5 flex flex-col gap-3">
@@ -179,25 +202,34 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
         </div>
       )}
 
-      <div className="text-sm text-gray-600 flex flex-col gap-1">
-        <div className="flex gap-4">
-          <span>💰 {price}</span>
+      <div className="text-sm text-gray-600 flex flex-col gap-2">
+        <div className="flex flex-wrap gap-x-4 gap-y-1 items-center">
+          <span className="font-semibold text-gray-800">💰 {price}</span>
           {route.latest_airline && route.latest_airline !== "Unknown" && (
             <span>✈️ {route.latest_airline}</span>
           )}
+          {route.latest_source && (
+            <span className="text-gray-400 text-xs">via {sourceLabel(route.latest_source)}</span>
+          )}
         </div>
-        <div className="flex gap-4 items-center">
-          <span>🕐 {checked}</span>
+        <div className="flex flex-wrap gap-x-3 gap-y-1 items-center">
+          <span className="text-gray-400">🕐 {checked}</span>
           {route.latest_price && (
             <a
               href={bookingUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
+              className="px-3 py-1 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700"
             >
-              🔗 Book on Google Flights
+              Book Now
             </a>
           )}
+          <Link
+            href={`/routes/${route.id}`}
+            className="px-3 py-1 rounded-lg bg-gray-100 text-gray-600 text-xs font-medium hover:bg-gray-200"
+          >
+            See Price History
+          </Link>
         </div>
       </div>
     </div>
