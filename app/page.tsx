@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { RouteCard } from "@/components/RouteCard";
 import { AddRouteForm } from "@/components/AddRouteForm";
+import { useLocale, T } from "@/lib/locale";
 
 interface Route {
   id: string;
@@ -23,6 +24,8 @@ interface Route {
 export default function Dashboard() {
   const [routes, setRoutes] = useState<Route[]>([]);
   const [loading, setLoading] = useState(true);
+  const { lang } = useLocale();
+  const t = T[lang];
 
   useEffect(() => {
     fetch("/api/routes")
@@ -35,7 +38,8 @@ export default function Dashboard() {
         });
         setRoutes(sorted);
         setLoading(false);
-      });
+      })
+      .catch(() => setLoading(false));
   }, []);
 
   function handleAdded(route: Route) {
@@ -51,20 +55,24 @@ export default function Dashboard() {
   }
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-10">
-      <h1 className="text-3xl font-bold text-gray-900 mb-1">✈ Flight Price Tracker</h1>
-      <p className="text-gray-500 mb-8">Get notified when fares drop.</p>
-
+    <main className="max-w-2xl mx-auto px-4 py-8">
       <div className="flex flex-col gap-4">
         <AddRouteForm onAdded={handleAdded} />
 
         {loading ? (
-          <p className="text-gray-400 text-center py-8">Loading…</p>
+          <div className="text-center py-12 text-gray-400">
+            <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-sm">Loading…</p>
+          </div>
         ) : routes.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
-            <p className="text-5xl mb-4">🛫</p>
-            <p className="text-lg font-medium text-gray-500">No routes tracked yet</p>
-            <p className="text-sm mt-1">Add a route above to start watching prices.</p>
+            <p className="text-6xl mb-4">✈️</p>
+            <p className="text-lg font-bold text-gray-500">
+              {lang === "zh" ? "尚未追蹤任何航線" : "No routes tracked yet"}
+            </p>
+            <p className="text-sm mt-1">
+              {lang === "zh" ? "點上方按鈕開始追蹤票價" : "Add a route above to start watching prices."}
+            </p>
           </div>
         ) : (
           routes.map((route) => (

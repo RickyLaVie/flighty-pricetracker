@@ -6,7 +6,19 @@ const config: Config = {
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        brand: {
+          DEFAULT: "#E8431A",
+          hover: "#D03A16",
+          light: "#FFF2EE",
+          muted: "#FDDDD4",
+        },
+      },
+      fontFamily: {
+        sans: ["var(--font-nunito)", "ui-rounded", "system-ui", "sans-serif"],
+      },
+    },
   },
   plugins: [],
 };

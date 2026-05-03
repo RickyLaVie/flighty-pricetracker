@@ -48,11 +48,11 @@ export default function RouteDetailPage() {
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-10">
-      <Link href="/" className="text-sm text-blue-600 hover:underline mb-6 block">
-        ← Back to dashboard
+      <Link href="/" className="text-sm text-brand font-semibold hover:underline mb-6 block">
+        ← {lang === "zh" ? "返回主頁" : "Back"}
       </Link>
 
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Price History</h1>
+      <h1 className="text-2xl font-extrabold text-gray-900 mb-6">{t.priceHistory}</h1>
 
       {loading ? (
         <p className="text-gray-400">Loading…</p>

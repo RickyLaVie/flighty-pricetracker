@@ -114,120 +114,107 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
   const bookingUrl = buildBookingUrl(route.latest_source, route.origin, route.destination, route.date_from, route.date_to);
 
   return (
-    <div className="bg-white rounded-xl shadow p-5 flex flex-col gap-3">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col gap-3">
+      {/* Header row */}
       <div className="flex items-center justify-between">
         <Link
           href={`/routes/${route.id}`}
-          className="text-xl font-bold text-blue-600 hover:underline"
+          className="text-xl font-extrabold text-gray-900 hover:text-brand transition-colors"
         >
           {route.origin} → {route.destination}
         </Link>
-        <div className="flex gap-2">
+        <div className="flex gap-1.5">
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="text-sm px-3 py-1 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-50"
+            className="text-xs px-3 py-1.5 rounded-lg bg-brand-light text-brand font-semibold hover:bg-brand-muted disabled:opacity-50 transition-colors"
           >
             {refreshing ? "…" : t.refreshNow}
           </button>
           <button
             onClick={() => setEditing((v) => !v)}
-            className="text-sm px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200"
+            className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 font-semibold hover:bg-gray-200 transition-colors"
           >
-            Edit
+            {lang === "zh" ? "編輯" : "Edit"}
           </button>
           <button
             onClick={handleDelete}
             disabled={busy}
-            className="text-sm px-3 py-1 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 disabled:opacity-50"
+            className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-400 font-semibold hover:bg-red-50 hover:text-red-500 disabled:opacity-50 transition-colors"
           >
-            Delete
+            {lang === "zh" ? "刪除" : "Delete"}
           </button>
         </div>
       </div>
 
+      {/* Date / filters */}
       {editing ? (
         <form onSubmit={handleEdit} className="flex flex-col gap-2">
           <div className="flex gap-2">
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="border rounded px-2 py-1 text-sm"
-              required
-            />
-            <span className="self-center text-gray-500">–</span>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="border rounded px-2 py-1 text-sm"
-              required
-            />
+            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="border rounded-lg px-2 py-1.5 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-brand/30" required />
+            <span className="self-center text-gray-400">–</span>
+            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="border rounded-lg px-2 py-1.5 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-brand/30" required />
           </div>
           <div className="flex flex-col gap-1 text-sm text-gray-700">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={requireBaggage} onChange={e => setRequireBaggage(e.target.checked)} className="rounded" />
-              需含托運行李
+              <input type="checkbox" checked={requireBaggage} onChange={e => setRequireBaggage(e.target.checked)} className="rounded accent-brand" />
+              {lang === "zh" ? "需含托運行李" : "Require checked baggage"}
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={excludeBudget} onChange={e => setExcludeBudget(e.target.checked)} className="rounded" />
-              排除廉價航空
+              <input type="checkbox" checked={excludeBudget} onChange={e => setExcludeBudget(e.target.checked)} className="rounded accent-brand" />
+              {lang === "zh" ? "排除廉價航空" : "Exclude budget airlines"}
             </label>
           </div>
           {error && <p className="text-red-500 text-xs">{error}</p>}
           <div className="flex gap-2">
-            <button
-              type="submit"
-              disabled={busy}
-              className="text-sm px-3 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
-            >
-              Save
+            <button type="submit" disabled={busy} className="text-sm px-4 py-1.5 rounded-lg bg-brand text-white font-semibold hover:bg-brand-hover disabled:opacity-50 transition-colors">
+              {lang === "zh" ? "儲存" : "Save"}
             </button>
-            <button
-              type="button"
-              onClick={() => setEditing(false)}
-              className="text-sm px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200"
-            >
-              Cancel
+            <button type="button" onClick={() => setEditing(false)} className="text-sm px-4 py-1.5 rounded-lg bg-gray-100 text-gray-600 font-semibold hover:bg-gray-200 transition-colors">
+              {lang === "zh" ? "取消" : "Cancel"}
             </button>
           </div>
         </form>
       ) : (
-        <div className="text-sm text-gray-500 flex flex-col gap-1">
+        <div className="text-sm text-gray-400 flex flex-wrap items-center gap-2">
           <span>{route.date_from.slice(0, 10)} – {route.date_to.slice(0, 10)}</span>
-          <div className="flex gap-2 flex-wrap">
-            {route.require_checked_baggage && <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full text-xs">含托運行李</span>}
-            {route.exclude_budget_airlines && <span className="bg-orange-50 text-orange-600 px-2 py-0.5 rounded-full text-xs">排除廉價航空</span>}
-          </div>
+          {route.require_checked_baggage && <span className="bg-orange-50 text-brand px-2 py-0.5 rounded-full text-xs font-medium">{lang === "zh" ? "含托運行李" : "Checked baggage"}</span>}
+          {route.exclude_budget_airlines && <span className="bg-orange-50 text-brand px-2 py-0.5 rounded-full text-xs font-medium">{lang === "zh" ? "排除廉航" : "No budget airlines"}</span>}
         </div>
       )}
 
-      <div className="text-sm text-gray-600 flex flex-col gap-2">
-        <div className="flex flex-wrap gap-x-4 gap-y-1 items-center">
-          <span className="font-semibold text-gray-800">💰 {price}</span>
-          {route.latest_airline && route.latest_airline !== "Unknown" && (
-            <span>✈️ {route.latest_airline}</span>
-          )}
-          {route.latest_source && (
-            <span className="text-gray-400 text-xs">via {sourceLabel(route.latest_source)}</span>
-          )}
+      {/* Price row */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-gray-50">
+        <div>
+          <div className="text-2xl font-extrabold text-gray-900">{price}</div>
+          <div className="text-xs text-gray-400 mt-0.5 flex items-center gap-1.5">
+            {route.latest_airline && route.latest_airline !== "Unknown" && (
+              <span>✈ {route.latest_airline}</span>
+            )}
+            {route.latest_source && (
+              <span className="text-gray-300">·</span>
+            )}
+            {route.latest_source && (
+              <span>via {sourceLabel(route.latest_source)}</span>
+            )}
+          </div>
+          <div className="text-xs text-gray-300 mt-0.5">🕐 {checked}</div>
         </div>
-        <div className="flex flex-wrap gap-x-3 gap-y-1 items-center">
-          <span className="text-gray-400">🕐 {checked}</span>
+
+        <div className="flex flex-col gap-1.5 items-end">
           {route.latest_price && (
             <a
               href={bookingUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-3 py-1 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700"
+              className="px-4 py-1.5 rounded-xl bg-brand text-white text-sm font-bold hover:bg-brand-hover transition-colors shadow-sm"
             >
               {t.bookNow}
             </a>
           )}
           <Link
             href={`/routes/${route.id}`}
-            className="px-3 py-1 rounded-lg bg-gray-100 text-gray-600 text-xs font-medium hover:bg-gray-200"
+            className="px-4 py-1.5 rounded-xl bg-gray-100 text-gray-500 text-sm font-semibold hover:bg-gray-200 transition-colors"
           >
             {t.priceHistory}
           </Link>

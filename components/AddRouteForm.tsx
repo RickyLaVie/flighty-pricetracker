@@ -88,7 +88,7 @@ export function AddRouteForm({ onAdded }: Props) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="w-full py-3 rounded-xl border-2 border-dashed border-blue-300 text-blue-600 hover:bg-blue-50 font-medium"
+        className="w-full py-3 rounded-2xl border-2 border-dashed border-brand/40 text-brand hover:bg-brand-light font-bold transition-colors"
       >
         {t.addRoute}
       </button>
@@ -98,27 +98,29 @@ export function AddRouteForm({ onAdded }: Props) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white rounded-xl shadow p-5 flex flex-col gap-3"
+      className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col gap-3"
     >
-      <h2 className="font-semibold text-gray-800">New Route</h2>
+      <h2 className="font-extrabold text-gray-800">
+        {lang === "zh" ? "新增航線" : "Add New Route"}
+      </h2>
       <div className="flex gap-2">
         <div className="flex-1">
           <input
-            placeholder="From (e.g. TPE)"
+            placeholder={lang === "zh" ? "出發（例：TPE）" : "From (e.g. TPE)"}
             value={origin}
             onChange={(e) => setOrigin(e.target.value.toUpperCase())}
             maxLength={3}
-            className="w-full border rounded px-3 py-2 text-sm uppercase"
+            className="w-full border rounded-lg px-3 py-2 text-sm uppercase font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-brand/30"
           />
           {errors.origin && <p className="text-red-500 text-xs mt-1">{errors.origin}</p>}
         </div>
         <div className="flex-1">
           <input
-            placeholder="To (e.g. NRT)"
+            placeholder={lang === "zh" ? "目的地（例：NRT）" : "To (e.g. NRT)"}
             value={destination}
             onChange={(e) => setDestination(e.target.value.toUpperCase())}
             maxLength={3}
-            className="w-full border rounded px-3 py-2 text-sm uppercase"
+            className="w-full border rounded-lg px-3 py-2 text-sm uppercase font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-brand/30"
           />
           {errors.destination && <p className="text-red-500 text-xs mt-1">{errors.destination}</p>}
         </div>
@@ -129,7 +131,7 @@ export function AddRouteForm({ onAdded }: Props) {
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            className="w-full border rounded px-3 py-2 text-sm"
+            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
           />
           {errors.date_from && <p className="text-red-500 text-xs mt-1">{errors.date_from}</p>}
         </div>
@@ -138,19 +140,19 @@ export function AddRouteForm({ onAdded }: Props) {
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            className="w-full border rounded px-3 py-2 text-sm"
+            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
           />
           {errors.date_to && <p className="text-red-500 text-xs mt-1">{errors.date_to}</p>}
         </div>
       </div>
-      <div className="flex flex-col gap-1 text-sm text-gray-700">
+      <div className="flex flex-col gap-1 text-sm text-gray-600">
         <label className="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" checked={requireBaggage} onChange={e => setRequireBaggage(e.target.checked)} className="rounded" />
-          需含托運行李（排除廉價航空無行李方案）
+          <input type="checkbox" checked={requireBaggage} onChange={e => setRequireBaggage(e.target.checked)} className="rounded accent-brand" />
+          {lang === "zh" ? "需含托運行李" : "Require checked baggage"}
         </label>
         <label className="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" checked={excludeBudget} onChange={e => setExcludeBudget(e.target.checked)} className="rounded" />
-          排除廉價航空
+          <input type="checkbox" checked={excludeBudget} onChange={e => setExcludeBudget(e.target.checked)} className="rounded accent-brand" />
+          {lang === "zh" ? "排除廉價航空" : "Exclude budget airlines"}
         </label>
       </div>
 
@@ -158,16 +160,16 @@ export function AddRouteForm({ onAdded }: Props) {
         <button
           type="submit"
           disabled={busy}
-          className="px-5 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+          className="px-5 py-2 rounded-xl bg-brand text-white text-sm font-bold hover:bg-brand-hover disabled:opacity-50 transition-colors shadow-sm"
         >
-          {busy ? "Adding…" : "Add Route"}
+          {busy ? "…" : lang === "zh" ? "確認新增" : "Add Route"}
         </button>
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="px-5 py-2 rounded-lg bg-gray-100 text-sm hover:bg-gray-200"
+          className="px-5 py-2 rounded-xl bg-gray-100 text-gray-600 text-sm font-semibold hover:bg-gray-200 transition-colors"
         >
-          Cancel
+          {lang === "zh" ? "取消" : "Cancel"}
         </button>
       </div>
     </form>
