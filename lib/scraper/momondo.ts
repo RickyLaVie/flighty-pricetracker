@@ -1,6 +1,19 @@
 import { launchBrowser, createStealthContext } from "./base";
 import type { Browser } from "playwright";
-import type { ScrapeResult } from "./types";
+import type { ScrapeResult, MarketStats } from "./types";
+
+function percentile(sorted: number[], p: number): number {
+  if (sorted.length === 0) return 0;
+  if (sorted.length === 1) return sorted[0];
+  const idx = (p / 100) * (sorted.length - 1);
+  const lo = Math.floor(idx);
+  const hi = Math.ceil(idx);
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
+}
+
+interface FlightStatsResponse {
+  monthPrices?: { chartData?: { values?: number[]; labels?: string[] } };
+}
 
 // Maps Momondo airline display names to a canonical name we recognise
 const AIRLINE_DISPLAY_MAP: Record<string, string> = {
@@ -62,13 +75,15 @@ export async function scrapeMomondo(
 
   // Accumulate poll API responses — Momondo polls repeatedly as results load
   const pollBodies: PollResponse[] = [];
+  let flightStats: FlightStatsResponse | undefined;
 
   page.on("response", async (resp) => {
-    if (!resp.url().includes("/i/api/search/dynamic/flights/poll")) return;
-    try {
-      const json: PollResponse = await resp.json();
-      pollBodies.push(json);
-    } catch {}
+    const u = resp.url();
+    if (u.includes("/i/api/search/dynamic/flights/poll")) {
+      try { pollBodies.push(await resp.json()); } catch {}
+    } else if (u.includes("FlightStatisticsAction") || u.includes("flightstatistics")) {
+      try { flightStats = (await resp.json()) as FlightStatsResponse; } catch {}
+    }
   });
 
   try {
@@ -106,7 +121,26 @@ export async function scrapeMomondo(
 
     if (airlineMap.size > 0) {
       const cheapest = [...airlineMap.values()].reduce((a, b) => (a.price < b.price ? a : b));
-      return { price: cheapest.price, currency: cheapest.currency, airline: cheapest.name, source: "momondo" };
+
+      // Build market stats from FlightStatisticsAction if available
+      let marketStats: MarketStats | undefined;
+      const monthValues = flightStats?.monthPrices?.chartData?.values;
+      const monthLabels = flightStats?.monthPrices?.chartData?.labels;
+      if (monthValues && monthValues.length === 12 && monthLabels) {
+        const sorted = [...monthValues].sort((a, b) => a - b);
+        marketStats = {
+          source: "momondo",
+          updatedAt: new Date().toISOString(),
+          monthlyAvg: monthValues,
+          monthLabels,
+          p25: Math.round(percentile(sorted, 25)),
+          p75: Math.round(percentile(sorted, 75)),
+          median: Math.round(percentile(sorted, 50)),
+        };
+        console.log("[momondo] market stats:", `p25=$${marketStats.p25} median=$${marketStats.median} p75=$${marketStats.p75}`);
+      }
+
+      return { price: cheapest.price, currency: cheapest.currency, airline: cheapest.name, source: "momondo", marketStats };
     }
 
     // Fallback: body-text parse

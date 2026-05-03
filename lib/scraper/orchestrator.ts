@@ -63,6 +63,15 @@ export async function runScrapeForRoute(routeId: string) {
               departure_date: new Date(departureDate),
             },
           });
+
+          // Persist market stats to Route when available (from Momondo)
+          if (result.marketStats) {
+            await prisma.route.update({
+              where: { id: routeId },
+              data: { price_stats: result.marketStats as object },
+            });
+          }
+
           await evaluateAndAlert(routeId, snapshot.price);
           successCount++;
           break; // First successful source wins — don't let a later source overwrite with a worse price

@@ -15,6 +15,7 @@ model Route {
   status                   String          @default("active")
   exclude_budget_airlines  Boolean         @default(false)
   require_checked_baggage  Boolean         @default(false)
+  price_stats              Json?
   created_at               DateTime        @default(now())
   snapshots   PriceSnapshot[]
   alerts      AlertLog[]

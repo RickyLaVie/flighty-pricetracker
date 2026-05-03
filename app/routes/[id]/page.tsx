@@ -15,18 +15,20 @@ interface Snapshot {
   scraped_at: string;
 }
 
-interface PriceStats {
+interface MarketStats {
+  monthlyAvg: number[];
+  monthLabels: string[];
   p25: number;
   p75: number;
   median: number;
-  count: number;
 }
 
 interface ChartData {
   snapshots: Snapshot[];
   average: number | null;
   hasBaseline: boolean;
-  priceStats: PriceStats | null;
+  marketStats: MarketStats | null;
+  departureDate: string | null;
 }
 
 export default function RouteDetailPage() {
@@ -63,18 +65,18 @@ export default function RouteDetailPage() {
             const latest = [...data.snapshots].sort(
               (a, b) => new Date(b.scraped_at).getTime() - new Date(a.scraped_at).getTime()
             )[0];
-            return data.priceStats && latest ? (
+            return data.marketStats && latest && data.departureDate ? (
               <PriceLevelBar
                 currentPrice={latest.price}
                 currency={latest.currency}
-                p25={data.priceStats.p25}
-                p75={data.priceStats.p75}
+                departureDate={data.departureDate}
+                marketStats={data.marketStats}
               />
-            ) : !data.priceStats ? (
+            ) : (
               <div className="mb-4 rounded-lg bg-gray-50 border border-gray-200 px-4 py-3 text-sm text-gray-500">
-                收集更多價格資料中（至少需要 5 筆才能顯示價格分析）…
+                尚未取得市場歷史價格資料，下次 Refresh Now 後將自動更新。
               </div>
-            ) : null;
+            );
           })()}
           <PriceChart
             snapshots={data.snapshots}
