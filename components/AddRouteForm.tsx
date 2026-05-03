@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale, T } from "@/lib/locale";
 
 interface RouteBasic {
   id: string;
@@ -32,6 +33,8 @@ export function AddRouteForm({ onAdded }: Props) {
   const [requireBaggage, setRequireBaggage] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  const { lang } = useLocale();
+  const t = T[lang];
 
   function validate() {
     const e: Record<string, string> = {};
@@ -87,7 +90,7 @@ export function AddRouteForm({ onAdded }: Props) {
         onClick={() => setOpen(true)}
         className="w-full py-3 rounded-xl border-2 border-dashed border-blue-300 text-blue-600 hover:bg-blue-50 font-medium"
       >
-        + Track a new route
+        {t.addRoute}
       </button>
     );
   }

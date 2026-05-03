@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { LocaleProvider } from "@/lib/locale";
+import { LocaleBar } from "@/components/LocaleBar";
 
 export const metadata: Metadata = {
   title: "Flight Price Tracker",
@@ -13,7 +15,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-gray-50 text-gray-900 antialiased">{children}</body>
+      <body className="bg-gray-50 text-gray-900 antialiased">
+        <LocaleProvider>
+          <LocaleBar />
+          {children}
+        </LocaleProvider>
+      </body>
     </html>
   );
 }

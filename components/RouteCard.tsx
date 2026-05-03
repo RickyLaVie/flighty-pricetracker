@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useLocale, T } from "@/lib/locale";
 
 interface Route {
   id: string;
@@ -47,6 +48,8 @@ interface Props {
 }
 
 export function RouteCard({ route, onDeleted, onUpdated }: Props) {
+  const { fmt, lang } = useLocale();
+  const t = T[lang];
   const [editing, setEditing] = useState(false);
   const [dateFrom, setDateFrom] = useState(route.date_from.slice(0, 10));
   const [dateTo, setDateTo] = useState(route.date_to.slice(0, 10));
@@ -104,9 +107,7 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
     }
   }
 
-  const price = route.latest_price
-    ? `${route.latest_price.toLocaleString()} ${route.latest_currency ?? ""}`
-    : "No data yet";
+  const price = route.latest_price != null ? fmt(route.latest_price) : t.noDataYet;
   const checked = route.last_checked
     ? new Date(route.last_checked).toLocaleString()
     : "Never";
@@ -127,7 +128,7 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
             disabled={refreshing}
             className="text-sm px-3 py-1 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-50"
           >
-            {refreshing ? "Refreshing…" : "Refresh Now"}
+            {refreshing ? "…" : t.refreshNow}
           </button>
           <button
             onClick={() => setEditing((v) => !v)}
@@ -221,14 +222,14 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
               rel="noopener noreferrer"
               className="px-3 py-1 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700"
             >
-              Book Now
+              {t.bookNow}
             </a>
           )}
           <Link
             href={`/routes/${route.id}`}
             className="px-3 py-1 rounded-lg bg-gray-100 text-gray-600 text-xs font-medium hover:bg-gray-200"
           >
-            See Price History
+            {t.priceHistory}
           </Link>
         </div>
       </div>

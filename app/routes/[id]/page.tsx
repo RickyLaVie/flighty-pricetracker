@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { PriceChart } from "@/components/PriceChart";
 import { PriceLevelBar } from "@/components/PriceLevelBar";
+import { useLocale, T } from "@/lib/locale";
 
 interface Snapshot {
   id: string;
@@ -33,6 +34,8 @@ interface ChartData {
 
 export default function RouteDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { lang, fmt } = useLocale();
+  const t = T[lang];
   const [data, setData] = useState<ChartData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -68,13 +71,12 @@ export default function RouteDetailPage() {
             return data.marketStats && latest && data.departureDate ? (
               <PriceLevelBar
                 currentPrice={latest.price}
-                currency={latest.currency}
                 departureDate={data.departureDate}
                 marketStats={data.marketStats}
               />
             ) : (
               <div className="mb-4 rounded-lg bg-gray-50 border border-gray-200 px-4 py-3 text-sm text-gray-500">
-                尚未取得市場歷史價格資料，下次 Refresh Now 後將自動更新。
+                {t.noMarketData}
               </div>
             );
           })()}
@@ -106,7 +108,7 @@ export default function RouteDetailPage() {
                       {new Date(s.scraped_at).toLocaleString()}
                     </td>
                     <td className="py-2 pr-4 font-medium">
-                      {s.price.toLocaleString()} {s.currency}
+                      {fmt(s.price)}
                     </td>
                     <td className="py-2 pr-4 text-gray-600">{s.airline}</td>
                     <td className="py-2 text-gray-400 capitalize">{s.source.replace("_", " ")}</td>
