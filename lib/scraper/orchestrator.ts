@@ -65,6 +65,7 @@ export async function runScrapeForRoute(routeId: string) {
           });
           await evaluateAndAlert(routeId, snapshot.price);
           successCount++;
+          break; // First successful source wins — don't let a later source overwrite with a worse price
         }
       } catch (err) {
         console.error(`Scrape error for route ${routeId}:`, err);
