@@ -1,4 +1,5 @@
 import { launchBrowser, createStealthContext, randomDelay } from "./base";
+import type { Browser } from "playwright";
 import type { ScrapeResult } from "./types";
 
 function buildGoogleFlightsUrl(
@@ -14,9 +15,11 @@ export async function scrapeGoogleFlights(
   origin: string,
   destination: string,
   departureDate: string,
-  returnDate: string
+  returnDate: string,
+  sharedBrowser?: Browser
 ): Promise<ScrapeResult | null> {
-  const browser = await launchBrowser();
+  const ownBrowser = !sharedBrowser;
+  const browser = sharedBrowser ?? await launchBrowser();
   const context = await createStealthContext(browser);
   const page = await context.newPage();
 
@@ -120,6 +123,6 @@ export async function scrapeGoogleFlights(
     return null;
   } finally {
     await context.close();
-    await browser.close();
+    if (ownBrowser) await browser.close();
   }
 }

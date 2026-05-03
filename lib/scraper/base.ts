@@ -57,6 +57,7 @@ export async function launchBrowser(): Promise<Browser> {
       "--disable-dev-shm-usage",
       "--disable-gpu",
       "--disable-blink-features=AutomationControlled",
+      "--no-zygote",
     ],
   });
 }

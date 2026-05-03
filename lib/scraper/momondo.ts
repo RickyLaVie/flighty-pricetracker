@@ -1,4 +1,5 @@
 import { launchBrowser, createStealthContext } from "./base";
+import type { Browser } from "playwright";
 import type { ScrapeResult } from "./types";
 
 // Maps Momondo airline display names to a canonical name we recognise
@@ -51,9 +52,11 @@ export async function scrapeMomondo(
   origin: string,
   destination: string,
   departureDate: string,
-  returnDate: string
+  returnDate: string,
+  sharedBrowser?: Browser
 ): Promise<ScrapeResult | null> {
-  const browser = await launchBrowser();
+  const ownBrowser = !sharedBrowser;
+  const browser = sharedBrowser ?? await launchBrowser();
   const context = await createStealthContext(browser);
   const page = await context.newPage();
 
@@ -114,7 +117,7 @@ export async function scrapeMomondo(
     return null;
   } finally {
     await context.close();
-    await browser.close();
+    if (ownBrowser) await browser.close();
   }
 }
 

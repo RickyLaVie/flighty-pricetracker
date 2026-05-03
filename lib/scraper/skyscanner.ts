@@ -1,4 +1,5 @@
 import { launchBrowser, createStealthContext, randomDelay } from "./base";
+import type { Browser } from "playwright";
 import type { ScrapeResult } from "./types";
 
 function buildSkyscannerUrl(
@@ -18,9 +19,11 @@ export async function scrapeSkyscanner(
   origin: string,
   destination: string,
   departureDate: string,
-  _returnDate?: string
+  _returnDate?: string,
+  sharedBrowser?: Browser
 ): Promise<ScrapeResult | null> {
-  const browser = await launchBrowser();
+  const ownBrowser = !sharedBrowser;
+  const browser = sharedBrowser ?? await launchBrowser();
   const context = await createStealthContext(browser);
   const page = await context.newPage();
 
@@ -78,6 +81,6 @@ export async function scrapeSkyscanner(
     return null;
   } finally {
     await context.close();
-    await browser.close();
+    if (ownBrowser) await browser.close();
   }
 }

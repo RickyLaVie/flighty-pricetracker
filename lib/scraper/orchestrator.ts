@@ -1,10 +1,12 @@
 import { prisma } from "@/lib/db";
 import { listActiveRoutes } from "@/lib/routes/queries";
+import { launchBrowser } from "./base";
 import { scrapeGoogleFlights } from "./google-flights";
 import { scrapeSkyscanner } from "./skyscanner";
 import { scrapeMomondo } from "./momondo";
 import { sendScraperFailureAlert } from "@/lib/linebot/notifications";
 import { evaluateAndAlert } from "@/lib/alerting/engine";
+import type { Browser } from "playwright";
 
 const BUDGET_AIRLINES = [
   "hong kong express", "hk express", "airasia", "air asia",
@@ -25,37 +27,51 @@ export async function runScrapeForRoute(routeId: string) {
   const departureDate = route.date_from.toISOString().split("T")[0];
   const returnDate = route.date_to.toISOString().split("T")[0];
 
+  // Launch ONE browser for the whole run — avoids resource contention on Railway
+  let browser: Browser | undefined;
+  try {
+    browser = await launchBrowser();
+  } catch (err) {
+    console.error(`[orchestrator] browser launch failed for route ${routeId}:`, err);
+    await checkConsecutiveFailures(routeId);
+    return;
+  }
+
   const sources = [
-    () => scrapeMomondo(origin, destination, departureDate, returnDate),
-    () => scrapeGoogleFlights(origin, destination, departureDate, returnDate),
-    () => scrapeSkyscanner(origin, destination, departureDate, returnDate),
+    () => scrapeMomondo(origin, destination, departureDate, returnDate, browser),
+    () => scrapeGoogleFlights(origin, destination, departureDate, returnDate, browser),
+    () => scrapeSkyscanner(origin, destination, departureDate, returnDate, browser),
   ];
 
   let successCount = 0;
-  for (const scrape of sources) {
-    try {
-      const result = await scrape();
-      if (result) {
-        // Apply route-level filters
-        if (route.exclude_budget_airlines && isBudgetAirline(result.airline)) continue;
-        if (route.require_checked_baggage && isBudgetAirline(result.airline)) continue;
+  try {
+    for (const scrape of sources) {
+      try {
+        const result = await scrape();
+        if (result) {
+          // Apply route-level filters
+          if (route.exclude_budget_airlines && isBudgetAirline(result.airline)) continue;
+          if (route.require_checked_baggage && isBudgetAirline(result.airline)) continue;
 
-        const snapshot = await prisma.priceSnapshot.create({
-          data: {
-            route_id: routeId,
-            source: result.source,
-            price: result.price,
-            currency: result.currency,
-            airline: result.airline,
-            departure_date: new Date(departureDate),
-          },
-        });
-        await evaluateAndAlert(routeId, snapshot.price);
-        successCount++;
+          const snapshot = await prisma.priceSnapshot.create({
+            data: {
+              route_id: routeId,
+              source: result.source,
+              price: result.price,
+              currency: result.currency,
+              airline: result.airline,
+              departure_date: new Date(departureDate),
+            },
+          });
+          await evaluateAndAlert(routeId, snapshot.price);
+          successCount++;
+        }
+      } catch (err) {
+        console.error(`Scrape error for route ${routeId}:`, err);
       }
-    } catch (err) {
-      console.error(`Scrape error for route ${routeId}:`, err);
     }
+  } finally {
+    await browser.close().catch(() => {});
   }
 
   if (successCount === 0) {
