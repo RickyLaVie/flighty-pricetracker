@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { PriceChart } from "@/components/PriceChart";
+import { PriceLevelBar } from "@/components/PriceLevelBar";
 
 interface Snapshot {
   id: string;
@@ -14,10 +15,18 @@ interface Snapshot {
   scraped_at: string;
 }
 
+interface PriceStats {
+  p25: number;
+  p75: number;
+  median: number;
+  count: number;
+}
+
 interface ChartData {
   snapshots: Snapshot[];
   average: number | null;
   hasBaseline: boolean;
+  priceStats: PriceStats | null;
 }
 
 export default function RouteDetailPage() {
@@ -49,11 +58,30 @@ export default function RouteDetailPage() {
           <p className="text-sm mt-1">Check back after the next scrape cycle.</p>
         </div>
       ) : (
-        <PriceChart
-          snapshots={data.snapshots}
-          average={data.average}
-          hasBaseline={data.hasBaseline}
-        />
+        <>
+          {(() => {
+            const latest = [...data.snapshots].sort(
+              (a, b) => new Date(b.scraped_at).getTime() - new Date(a.scraped_at).getTime()
+            )[0];
+            return data.priceStats && latest ? (
+              <PriceLevelBar
+                currentPrice={latest.price}
+                currency={latest.currency}
+                p25={data.priceStats.p25}
+                p75={data.priceStats.p75}
+              />
+            ) : !data.priceStats ? (
+              <div className="mb-4 rounded-lg bg-gray-50 border border-gray-200 px-4 py-3 text-sm text-gray-500">
+                收集更多價格資料中（至少需要 5 筆才能顯示價格分析）…
+              </div>
+            ) : null;
+          })()}
+          <PriceChart
+            snapshots={data.snapshots}
+            average={data.average}
+            hasBaseline={data.hasBaseline}
+          />
+        </>
       )}
 
       {data && data.snapshots.length > 0 && (
