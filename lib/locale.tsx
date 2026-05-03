@@ -43,10 +43,15 @@ const LocaleContext = createContext<LocaleCtx>({
   convert: (p) => p,
 });
 
+// Approximate fallback rates used when the live fetch fails
+const FALLBACK_RATES: Record<CurrencyCode, number> = {
+  USD: 1, TWD: 32.5, EUR: 0.92, GBP: 0.79, JPY: 145, HKD: 7.82, CNY: 7.25,
+};
+
 export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLangState] = useState<Lang>("zh");
   const [currency, setCurrencyState] = useState<CurrencyCode>("USD");
-  const [rates, setRates] = useState<Partial<Record<string, number>>>({ USD: 1 });
+  const [rates, setRates] = useState<Partial<Record<string, number>>>(FALLBACK_RATES);
 
   // Hydrate from localStorage
   useEffect(() => {
@@ -56,12 +61,12 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     if (c) setCurrencyState(c);
   }, []);
 
-  // Fetch exchange rates via server-side proxy (avoids browser CORS)
+  // Fetch live exchange rates via server-side proxy (avoids browser CORS)
   useEffect(() => {
     fetch("/api/rates")
-      .then((r) => r.json())
-      .then((d) => setRates({ USD: 1, ...d.rates }))
-      .catch(() => {});
+      .then((r) => { if (!r.ok) throw new Error(`rates ${r.status}`); return r.json(); })
+      .then((d) => { if (d.rates) setRates({ USD: 1, ...d.rates }); })
+      .catch((e) => console.warn("[locale] exchange rate fetch failed, using fallback:", e));
   }, []);
 
   const setLang = useCallback((l: Lang) => {
