@@ -56,9 +56,9 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     if (c) setCurrencyState(c);
   }, []);
 
-  // Fetch exchange rates once (frankfurter.app — free, no key)
+  // Fetch exchange rates via server-side proxy (avoids browser CORS)
   useEffect(() => {
-    fetch("https://api.frankfurter.app/latest?from=USD&to=TWD,EUR,GBP,JPY,HKD,CNY")
+    fetch("/api/rates")
       .then((r) => r.json())
       .then((d) => setRates({ USD: 1, ...d.rates }))
       .catch(() => {});
