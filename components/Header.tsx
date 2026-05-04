@@ -5,11 +5,7 @@ import Link from "next/link";
 import { useLocale, CURRENCIES, type CurrencyCode } from "@/lib/locale";
 
 export function Header() {
-  const { lang, setLang, currency, setCurrency, rates, convert } = useLocale();
-  // TEMP DEBUG — remove after confirming fix
-  if (typeof window !== "undefined") {
-    console.log("[locale-debug] currency:", currency, "rates:", JSON.stringify(rates), "convert(100):", convert(100));
-  }
+  const { lang, setLang, currency, setCurrency } = useLocale();
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
