@@ -65,7 +65,12 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     fetch("/api/rates")
       .then((r) => { if (!r.ok) throw new Error(`rates ${r.status}`); return r.json(); })
-      .then((d) => { if (d.rates) setRates({ USD: 1, ...d.rates }); })
+      .then((d) => {
+        // Only update if we received actual rates; an empty object would overwrite FALLBACK_RATES
+        if (d?.rates && Object.keys(d.rates).length >= 5) {
+          setRates({ USD: 1, ...d.rates });
+        }
+      })
       .catch((e) => console.warn("[locale] exchange rate fetch failed, using fallback:", e));
   }, []);
 

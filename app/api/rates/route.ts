@@ -7,7 +7,7 @@ export async function GET() {
     "https://api.frankfurter.app/latest?from=USD&to=TWD,EUR,GBP,JPY,HKD,CNY",
     { next: { revalidate: 3600 } }
   );
-  if (!res.ok) return NextResponse.json({ rates: {} }, { status: 200 });
+  if (!res.ok) return NextResponse.json({ error: "upstream failed" }, { status: 502 });
   const data = await res.json();
   return NextResponse.json(data);
 }
