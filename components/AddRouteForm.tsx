@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useLocale, T } from "@/lib/locale";
+import { AirportInput } from "@/components/AirportInput";
 
 interface RouteBasic {
   id: string;
@@ -23,6 +24,13 @@ interface Props {
   onAdded: (route: RouteBasic) => void;
 }
 
+function handleDateChange(val: string, setter: (v: string) => void) {
+  if (!val) { setter(""); return; }
+  // Only accept values where the year part is exactly 4 digits
+  const year = val.split("-")[0];
+  if (year.length <= 4) setter(val);
+}
+
 export function AddRouteForm({ onAdded }: Props) {
   const [open, setOpen] = useState(false);
   const [origin, setOrigin] = useState("");
@@ -38,12 +46,12 @@ export function AddRouteForm({ onAdded }: Props) {
 
   function validate() {
     const e: Record<string, string> = {};
-    if (!/^[A-Za-z]{3}$/.test(origin)) e.origin = "3-letter IATA code required";
-    if (!/^[A-Za-z]{3}$/.test(destination)) e.destination = "3-letter IATA code required";
-    if (!dateFrom) e.date_from = "Required";
-    if (!dateTo) e.date_to = "Required";
+    if (!/^[A-Za-z]{3}$/.test(origin)) e.origin = lang === "zh" ? "請輸入 3 碼機場代碼" : "3-letter IATA code required";
+    if (!/^[A-Za-z]{3}$/.test(destination)) e.destination = lang === "zh" ? "請輸入 3 碼機場代碼" : "3-letter IATA code required";
+    if (!dateFrom) e.date_from = lang === "zh" ? "請選擇日期" : "Required";
+    if (!dateTo) e.date_to = lang === "zh" ? "請選擇日期" : "Required";
     if (dateFrom && dateTo && new Date(dateTo) < new Date(dateFrom))
-      e.date_to = "End date must be on or after start date";
+      e.date_to = lang === "zh" ? "回程日期不可早於出發日期" : "End date must be on or after start date";
     return e;
   }
 
@@ -103,34 +111,36 @@ export function AddRouteForm({ onAdded }: Props) {
       <h2 className="font-extrabold text-gray-800">
         {lang === "zh" ? "新增航線" : "Add New Route"}
       </h2>
+
       <div className="flex gap-2">
         <div className="flex-1">
-          <input
-            placeholder={lang === "zh" ? "出發（例：TPE）" : "From (e.g. TPE)"}
+          <AirportInput
             value={origin}
-            onChange={(e) => setOrigin(e.target.value.toUpperCase())}
-            maxLength={3}
-            className="w-full border rounded-lg px-3 py-2 text-sm uppercase font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-brand/30"
+            onChange={setOrigin}
+            placeholder={lang === "zh" ? "出發（例：TPE）" : "From (e.g. TPE)"}
+            lang={lang}
           />
           {errors.origin && <p className="text-red-500 text-xs mt-1">{errors.origin}</p>}
         </div>
         <div className="flex-1">
-          <input
-            placeholder={lang === "zh" ? "目的地（例：NRT）" : "To (e.g. NRT)"}
+          <AirportInput
             value={destination}
-            onChange={(e) => setDestination(e.target.value.toUpperCase())}
-            maxLength={3}
-            className="w-full border rounded-lg px-3 py-2 text-sm uppercase font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-brand/30"
+            onChange={setDestination}
+            placeholder={lang === "zh" ? "目的地（例：NRT）" : "To (e.g. NRT)"}
+            lang={lang}
           />
           {errors.destination && <p className="text-red-500 text-xs mt-1">{errors.destination}</p>}
         </div>
       </div>
+
       <div className="flex gap-2">
         <div className="flex-1">
           <input
             type="date"
             value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
+            min="2024-01-01"
+            max="2035-12-31"
+            onChange={(e) => handleDateChange(e.target.value, setDateFrom)}
             className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
           />
           {errors.date_from && <p className="text-red-500 text-xs mt-1">{errors.date_from}</p>}
@@ -139,12 +149,15 @@ export function AddRouteForm({ onAdded }: Props) {
           <input
             type="date"
             value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
+            min="2024-01-01"
+            max="2035-12-31"
+            onChange={(e) => handleDateChange(e.target.value, setDateTo)}
             className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
           />
           {errors.date_to && <p className="text-red-500 text-xs mt-1">{errors.date_to}</p>}
         </div>
       </div>
+
       <div className="flex flex-col gap-1 text-sm text-gray-600">
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" checked={requireBaggage} onChange={e => setRequireBaggage(e.target.checked)} className="rounded accent-brand" />
