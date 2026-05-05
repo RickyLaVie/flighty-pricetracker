@@ -3,12 +3,17 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { computeRollingAverage } from "@/lib/alerting/average";
-
+import { getSession } from "@/lib/session";
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await getSession();
+  if (!session.userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { id } = await params;
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
@@ -18,8 +23,12 @@ export async function GET(
       orderBy: { scraped_at: "asc" },
     }),
     computeRollingAverage(id),
-    prisma.route.findUnique({ where: { id }, select: { price_stats: true, date_from: true } }),
+    prisma.route.findUnique({ where: { id }, select: { price_stats: true, date_from: true, user_id: true } }),
   ]);
+
+  if (!route || route.user_id !== session.userId) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
 
   const oldest = await prisma.priceSnapshot.findFirst({
     where: { route_id: id },

@@ -10,6 +10,7 @@ function buildGoogleFlightsSearchUrl(origin: string, destination: string, date: 
 }
 
 export async function sendPriceAlert(opts: {
+  userId: string;
   origin: string;
   destination: string;
   date_from: Date;
@@ -20,7 +21,6 @@ export async function sendPriceAlert(opts: {
   tierInfo: TierInfo;
 }) {
   const client = getLineClient();
-  const userId = process.env.LINE_USER_ID ?? "";
   const searchUrl = buildGoogleFlightsSearchUrl(
     opts.origin,
     opts.destination,
@@ -36,7 +36,7 @@ export async function sendPriceAlert(opts: {
     `Drop: ${opts.dropPercent}% below average\n` +
     `Search: ${searchUrl}`;
 
-  await client.pushMessage({ to: userId, messages: [{ type: "text", text }] });
+  await client.pushMessage({ to: opts.userId, messages: [{ type: "text", text }] });
 }
 
 export async function sendScraperFailureAlert(

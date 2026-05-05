@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/db";
-import { listActiveRoutes } from "@/lib/routes/queries";
 import { launchBrowser } from "./base";
 import { scrapeGoogleFlights } from "./google-flights";
 import { scrapeSkyscanner } from "./skyscanner";
@@ -118,7 +117,10 @@ async function checkConsecutiveFailures(routeId: string) {
 }
 
 export async function runScrapeForAllActiveRoutes() {
-  const routes = await listActiveRoutes();
+  const routes = await prisma.route.findMany({
+    where: { status: "active" },
+    select: { id: true },
+  });
   for (const route of routes) {
     await runScrapeForRoute(route.id);
   }

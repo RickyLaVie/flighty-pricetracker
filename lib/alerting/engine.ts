@@ -7,14 +7,13 @@ import type { Tier } from "./tiers";
 
 export async function evaluateAndAlert(routeId: string, snapshotPrice: number) {
   const average = await computeRollingAverage(routeId);
-  if (average === null) return; // insufficient history
+  if (average === null) return;
 
   const tierInfo = evaluateTier(snapshotPrice, average);
-  if (tierInfo === null) return; // price above all thresholds
+  if (tierInfo === null) return;
 
   const tier = tierInfo.tier as Tier;
 
-  // Higher tier overrides active lower-tier cooldowns
   await clearCooldownsBelow(routeId, tier);
 
   const onCooldown = await isOnCooldown(routeId, tier);
@@ -23,9 +22,14 @@ export async function evaluateAndAlert(routeId: string, snapshotPrice: number) {
   const route = await prisma.route.findUnique({ where: { id: routeId } });
   if (!route) return;
 
+  // Use route's owner; fall back to LINE_USER_ID for routes without an owner
+  const targetUserId = route.user_id ?? process.env.LINE_USER_ID ?? "";
+  if (!targetUserId) return;
+
   const dropPercent = Math.round((1 - snapshotPrice / average) * 100);
 
   await sendPriceAlert({
+    userId: targetUserId,
     origin: route.origin,
     destination: route.destination,
     date_from: route.date_from,

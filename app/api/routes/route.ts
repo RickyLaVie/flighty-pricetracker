@@ -3,10 +3,15 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { listActiveRoutes, createRoute } from "@/lib/routes/queries";
 import { createRouteSchema } from "@/lib/routes/validation";
-
+import { getSession } from "@/lib/session";
 
 export async function GET() {
-  const routes = await listActiveRoutes();
+  const session = await getSession();
+  if (!session.userId) {
+    return NextResponse.json([], { status: 200 });
+  }
+
+  const routes = await listActiveRoutes(session.userId);
   type RouteWithSnapshot = Awaited<ReturnType<typeof listActiveRoutes>>[number];
   const data = routes.map((r: RouteWithSnapshot) => ({
     id: r.id,
@@ -29,6 +34,11 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const session = await getSession();
+  if (!session.userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const body = await req.json();
   const parsed = createRouteSchema.safeParse(body);
   if (!parsed.success) {
@@ -43,6 +53,7 @@ export async function POST(req: Request) {
     destination: destination.toUpperCase(),
     date_from: new Date(date_from),
     date_to: new Date(date_to),
+    user_id: session.userId,
     exclude_budget_airlines: exclude_budget_airlines ?? false,
     require_checked_baggage: require_checked_baggage ?? false,
   });

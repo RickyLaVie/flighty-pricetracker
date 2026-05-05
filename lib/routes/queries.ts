@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/db";
 
-export async function listActiveRoutes() {
+export async function listActiveRoutes(userId: string) {
   return prisma.route.findMany({
-    where: { status: "active" },
+    where: { status: "active", user_id: userId },
     include: {
       snapshots: {
         orderBy: { scraped_at: "desc" },
@@ -22,6 +22,7 @@ export async function createRoute(data: {
   destination: string;
   date_from: Date;
   date_to: Date;
+  user_id: string;
   exclude_budget_airlines?: boolean;
   require_checked_baggage?: boolean;
 }) {

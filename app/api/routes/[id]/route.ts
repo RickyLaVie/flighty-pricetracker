@@ -3,16 +3,26 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { updateRoute, softDeleteRoute, getRouteById } from "@/lib/routes/queries";
 import { updateRouteSchema } from "@/lib/routes/validation";
+import { getSession } from "@/lib/session";
 
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await getSession();
+  if (!session.userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { id } = await params;
   const existing = await getRouteById(id);
   if (!existing || existing.status !== "active") {
     return NextResponse.json({ error: "Route not found" }, { status: 404 });
   }
+  if (existing.user_id !== session.userId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const body = await req.json();
   const parsed = updateRouteSchema.safeParse(body);
   if (!parsed.success) {
@@ -34,11 +44,20 @@ export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await getSession();
+  if (!session.userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { id } = await params;
   const existing = await getRouteById(id);
   if (!existing || existing.status !== "active") {
     return NextResponse.json({ error: "Route not found" }, { status: 404 });
   }
+  if (existing.user_id !== session.userId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   await softDeleteRoute(id);
   return new NextResponse(null, { status: 204 });
 }

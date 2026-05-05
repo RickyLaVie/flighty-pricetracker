@@ -26,10 +26,18 @@ async function handleTextMessage(
   const replyToken = event.replyToken;
   if (!replyToken) return;
 
+  // Get the LINE userId of the sender to show only their routes
+  const senderId = (event.source as { userId?: string })?.userId;
+
   if (text === "status") {
-    const routes = await listActiveRoutes();
+    if (!senderId) {
+      await sendStatusReply(replyToken, "Unable to identify user.");
+      return;
+    }
+
+    const routes = await listActiveRoutes(senderId);
     if (routes.length === 0) {
-      await sendStatusReply(replyToken, "No routes currently being tracked.");
+      await sendStatusReply(replyToken, "No routes tracked yet. Visit the web app to add routes.");
       return;
     }
     type RouteWithSnapshot = Awaited<ReturnType<typeof listActiveRoutes>>[number];
@@ -62,7 +70,7 @@ async function handleTextMessage(
 
   await sendStatusReply(
     replyToken,
-    "Available commands:\n• status — show all tracked routes and latest prices"
+    "Available commands:\n• status — show your tracked routes and latest prices"
   );
 }
 
