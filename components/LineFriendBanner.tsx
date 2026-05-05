@@ -52,10 +52,10 @@ export function LineFriendBanner() {
         />
       </div>
 
-      {/* Text + button */}
+      {/* Text */}
       <div className="flex-1 min-w-0">
         <div className="text-white font-extrabold text-base leading-snug flex items-center gap-1.5 flex-wrap">
-          加入
+          立即加入
           <Image
             src="/Flighty-wt.svg"
             alt="Flighty"
@@ -68,21 +68,23 @@ export function LineFriendBanner() {
         <p className="text-white font-bold text-sm mt-0.5">
           獲得便宜機票即時通知！
         </p>
-        <a
-          href="https://lin.ee/5dcWjLg"
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={handleAddFriend}
-          className="inline-block mt-2"
-        >
-          <img
-            src="https://scdn.line-apps.com/n/line_add_friends/btn/zh-Hant.png"
-            alt="加入好友"
-            height="36"
-            style={{ height: "36px", width: "auto" }}
-          />
-        </a>
       </div>
+
+      {/* Add friend button */}
+      <a
+        href="https://lin.ee/5dcWjLg"
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={handleAddFriend}
+        className="shrink-0"
+      >
+        <img
+          src="https://scdn.line-apps.com/n/line_add_friends/btn/zh-Hant.png"
+          alt="加入好友"
+          height="36"
+          style={{ height: "36px", width: "auto" }}
+        />
+      </a>
     </div>
   );
 }
