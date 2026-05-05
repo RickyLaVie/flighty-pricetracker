@@ -5,6 +5,7 @@ export interface SessionData {
   userId?: string;
   displayName?: string;
   pictureUrl?: string;
+  lineAccessToken?: string;
   oauthState?: string;
 }
 

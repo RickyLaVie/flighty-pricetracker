@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { RouteCard } from "@/components/RouteCard";
 import { AddRouteForm } from "@/components/AddRouteForm";
+import { LineFriendBanner } from "@/components/LineFriendBanner";
 import { useLocale, T } from "@/lib/locale";
 
 interface Route {
@@ -104,6 +105,7 @@ export default function Dashboard() {
   return (
     <main className="max-w-2xl mx-auto px-4 py-8">
       <div className="flex flex-col gap-4">
+        <LineFriendBanner />
         <AddRouteForm onAdded={handleAdded} />
 
         {routes.length === 0 ? (

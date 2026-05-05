@@ -52,6 +52,7 @@ export async function GET(req: Request) {
   session.userId = profile.userId;
   session.displayName = profile.displayName;
   session.pictureUrl = profile.pictureUrl;
+  session.lineAccessToken = access_token;
   delete session.oauthState;
   await session.save();
 
