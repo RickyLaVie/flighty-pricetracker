@@ -12,7 +12,7 @@ export function Header() {
       <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
         <Link href="/" className="flex items-center">
           <Image
-            src="/flighty-logo.png"
+            src="/flighty-logo.svg"
             alt="Flighty"
             width={120}
             height={54}
