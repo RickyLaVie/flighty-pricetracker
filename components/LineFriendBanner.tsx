@@ -7,6 +7,12 @@ export function LineFriendBanner() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    // ?preview_banner forces the banner visible for testing
+    if (new URLSearchParams(window.location.search).has("preview_banner")) {
+      setVisible(true);
+      return;
+    }
+
     // Already dismissed locally
     if (localStorage.getItem("line_bot_added") === "true") return;
 
