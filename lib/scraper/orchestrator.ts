@@ -6,6 +6,7 @@ import { scrapeMomondo } from "./momondo";
 import { sendScraperFailureAlert } from "@/lib/linebot/notifications";
 import { evaluateAndAlert } from "@/lib/alerting/engine";
 import type { Browser } from "playwright";
+import type { ScrapeResult } from "./types";
 
 const BUDGET_AIRLINES = [
   "hong kong express", "hk express", "airasia", "air asia",
@@ -36,45 +37,23 @@ export async function runScrapeForRoute(routeId: string) {
     return;
   }
 
-  const sources = [
+  const scrapers = [
     () => scrapeMomondo(origin, destination, departureDate, returnDate, browser),
     () => scrapeGoogleFlights(origin, destination, departureDate, returnDate, browser),
     () => scrapeSkyscanner(origin, destination, departureDate, returnDate, browser),
   ];
 
-  let successCount = 0;
+  const results: ScrapeResult[] = [];
   try {
-    for (const scrape of sources) {
+    for (const scrape of scrapers) {
       try {
         const result = await scrape();
-        if (result) {
-          // Apply route-level filters
-          if (route.exclude_budget_airlines && isBudgetAirline(result.airline)) continue;
-          if (route.require_checked_baggage && isBudgetAirline(result.airline)) continue;
-
-          const snapshot = await prisma.priceSnapshot.create({
-            data: {
-              route_id: routeId,
-              source: result.source,
-              price: result.price,
-              currency: result.currency,
-              airline: result.airline,
-              departure_date: new Date(departureDate),
-            },
-          });
-
-          // Persist market stats to Route when available (from Momondo)
-          if (result.marketStats) {
-            await prisma.route.update({
-              where: { id: routeId },
-              data: { price_stats: result.marketStats as object },
-            });
-          }
-
-          await evaluateAndAlert(routeId, snapshot.price);
-          successCount++;
-          break; // First successful source wins — don't let a later source overwrite with a worse price
-        }
+        if (!result) continue;
+        // Apply route-level filters
+        if (route.exclude_budget_airlines && isBudgetAirline(result.airline)) continue;
+        if (route.require_checked_baggage && isBudgetAirline(result.airline)) continue;
+        console.log(`[orchestrator] ${result.source}: $${result.price} ${result.airline}`);
+        results.push(result);
       } catch (err) {
         console.error(`Scrape error for route ${routeId}:`, err);
       }
@@ -83,9 +62,36 @@ export async function runScrapeForRoute(routeId: string) {
     await browser.close().catch(() => {});
   }
 
-  if (successCount === 0) {
+  if (results.length === 0) {
     await checkConsecutiveFailures(routeId);
+    return;
   }
+
+  // Pick the cheapest price across all sources
+  const cheapest = results.reduce((a, b) => (a.price < b.price ? a : b));
+  console.log(`[orchestrator] cheapest: $${cheapest.price} via ${cheapest.source} (${cheapest.airline})`);
+
+  const snapshot = await prisma.priceSnapshot.create({
+    data: {
+      route_id: routeId,
+      source: cheapest.source,
+      price: cheapest.price,
+      currency: cheapest.currency,
+      airline: cheapest.airline,
+      departure_date: new Date(departureDate),
+    },
+  });
+
+  // Persist market stats from Momondo if available
+  const withStats = results.find((r) => r.marketStats);
+  if (withStats?.marketStats) {
+    await prisma.route.update({
+      where: { id: routeId },
+      data: { price_stats: withStats.marketStats as object },
+    });
+  }
+
+  await evaluateAndAlert(routeId, snapshot.price);
 }
 
 async function checkConsecutiveFailures(routeId: string) {
