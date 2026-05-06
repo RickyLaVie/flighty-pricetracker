@@ -5,6 +5,8 @@ import { validateSignature } from "@line/bot-sdk";
 import type { webhook } from "@line/bot-sdk";
 import { listActiveRoutes } from "@/lib/routes/queries";
 import { sendStatusReply } from "@/lib/linebot/notifications";
+import { getLineClient } from "@/lib/linebot/client";
+import { runScrapeForRoute } from "@/lib/scraper/orchestrator";
 
 type CallbackRequest = webhook.CallbackRequest;
 type MessageEvent = webhook.MessageEvent;
@@ -65,6 +67,63 @@ async function handleTextMessage(
       replyToken,
       `Tracking ${routes.length} route(s):\n\n${lines.join("\n\n")}`
     );
+    return;
+  }
+
+  if (text === "refresh" || text === "刷新" || text === "刷新價格") {
+    if (!senderId) {
+      await sendStatusReply(replyToken, "無法識別使用者，請重試。");
+      return;
+    }
+
+    const routes = await listActiveRoutes(senderId);
+    if (routes.length === 0) {
+      await sendStatusReply(
+        replyToken,
+        "目前沒有追蹤中的航線。\n請前往 Flighty 網站新增路線：\nhttps://flight-price-tracker-production-e34e.up.railway.app"
+      );
+      return;
+    }
+
+    // Reply immediately — scraping runs in background
+    await sendStatusReply(
+      replyToken,
+      `⏳ 正在更新 ${routes.length} 條航線的票價，請稍候...\n完成後會另行通知。`
+    );
+
+    // Fire-and-forget background scrape
+    void (async () => {
+      for (const route of routes) {
+        try {
+          await runScrapeForRoute(route.id);
+        } catch (err) {
+          console.error(`[webhook] refresh scrape error for ${route.id}:`, err);
+        }
+      }
+
+      const updated = await listActiveRoutes(senderId);
+      const lines = updated.map((r) => {
+        const latest = r.snapshots[0];
+        const price = latest
+          ? `${latest.price.toLocaleString()} ${latest.currency}`
+          : "尚無資料";
+        const airline =
+          latest?.airline && latest.airline !== "Unknown"
+            ? ` (${latest.airline})`
+            : "";
+        const arrow = r.is_round_trip ? "⇄" : "→";
+        return `${r.origin} ${arrow} ${r.destination}: ${price}${airline}`;
+      });
+
+      const client = getLineClient();
+      await client.pushMessage({
+        to: senderId,
+        messages: [{ type: "text", text: `✅ 票價更新完成！\n\n${lines.join("\n")}` }],
+      });
+    })().catch((err) =>
+      console.error("[webhook] refresh background error:", err)
+    );
+
     return;
   }
 
