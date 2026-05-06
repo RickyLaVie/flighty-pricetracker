@@ -1,7 +1,7 @@
 import { launchBrowser, createStealthContext, randomDelay } from "./base";
 import type { ScrapeResult } from "./types";
 
-const AIRLINE_RE = /\b(STARLUX|Cathay Pacific|EVA Air|Hong Kong Express|HK Express|Hong Kong Airlines?|China Airlines?|Mandarin Airlines?|Greater Bay Airlines?|Air Macau|AirAsia|Japan Airlines?|ANA|Korean Air|Asiana|Peach|Scoot|Tigerair|Taiwan Tigerair|VietJet|Spring Airlines?)\b/i;
+const AIRLINE_RE = /\b(STARLUX|Cathay Pacific|EVA Air|Hong Kong Express|HK Express|Hong Kong Airlines?|China Airlines?|Mandarin Airlines?|Greater Bay Airlines?|Air Macau|AirAsia|Japan Airlines?|ANA|All Nippon Airways?|JAL|Korean Air|Asiana Airlines?|Peach|Scoot|Tigerair|Taiwan Tigerair|VietJet Air?|Spring Airlines?)\b/i;
 
 function buildTripUrl(
   origin: string,
@@ -29,11 +29,8 @@ export async function scrapeTrip(
     console.log("[trip] navigating to:", url);
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
 
-    // Wait for flight list to render
     await page.waitForLoadState("networkidle", { timeout: 30000 }).catch(() => {});
     await page.waitForTimeout(4000);
-
-    // Scroll to trigger lazy-loading
     await page.evaluate(() => window.scrollBy(0, 3000));
     await page.waitForTimeout(2000);
 
@@ -47,7 +44,6 @@ export async function scrapeTrip(
       const matchedCtx: string[] = [];
 
       for (let i = 0; i < lines.length; i++) {
-        // Trip.com shows prices as "196", "US$196", "$196", "USD 196", or "196 USD"
         const m =
           lines[i].match(/^(?:US\$|USD\s*)(\d[\d,]*)$/) ||
           lines[i].match(/^\$(\d[\d,]*)$/) ||
@@ -58,7 +54,6 @@ export async function scrapeTrip(
         const price = parseFloat(m[1].replace(/,/g, ""));
         if (isNaN(price) || price < 50 || price > 50000) continue;
 
-        // Require a time in surrounding context to avoid stray numbers
         const contextBefore = lines.slice(Math.max(0, i - 20), i).join(" ");
         const contextAfter = lines.slice(i, i + 10).join(" ");
         if (!TIME_RE.test(contextBefore) && !TIME_RE.test(contextAfter)) continue;
@@ -78,77 +73,15 @@ export async function scrapeTrip(
     console.log("[trip] debug lines:", debugLines);
     console.log("[trip] matched flights:", matchedCtx);
 
-    if (priceData.length === 0) {
-      // Fallback: try DOM-based extraction
-      console.log("[trip] text parse found nothing, trying DOM selectors");
-      return await domFallback(page);
-    }
+    if (priceData.length === 0) return null;
 
-    const lowest = priceData.reduce((a, b) => (a.price < b.price ? a : b));
-    return { ...lowest, source: "trip" };
+    const entries = priceData.map((r) => ({ ...r, source: "trip" }));
+    return { entries };
   } catch (err) {
     console.error("[trip] scrape error:", err);
     return null;
   } finally {
     await context.close();
     await browser.close();
-  }
-}
-
-async function domFallback(page: import("playwright").Page): Promise<ScrapeResult | null> {
-  try {
-    const result = await page.evaluate(() => {
-      // Trip.com React app uses data attributes and specific class patterns
-      // Try common price selectors
-      const priceSelectors = [
-        "[class*='price']",
-        "[class*='Price']",
-        "[class*='fare']",
-        "[class*='Fare']",
-      ];
-
-      const airlineSelectors = [
-        "[class*='airline']",
-        "[class*='Airline']",
-        "[class*='carrier']",
-        "[class*='Carrier']",
-      ];
-
-      interface FlightEntry { price: number; airline: string }
-      const flights: FlightEntry[] = [];
-
-      for (const priceSel of priceSelectors) {
-        const els = document.querySelectorAll(priceSel);
-        for (const el of Array.from(els)) {
-          const text = (el as HTMLElement).innerText?.trim() ?? "";
-          const m = text.match(/(\d[\d,]+)/);
-          if (!m) continue;
-          const price = parseFloat(m[1].replace(/,/g, ""));
-          if (isNaN(price) || price < 50 || price > 50000) continue;
-
-          // Look for airline in parent card
-          let parent = el.parentElement;
-          let airline = "Unknown";
-          for (let depth = 0; depth < 8 && parent; depth++, parent = parent.parentElement) {
-            const cardText = (parent as HTMLElement).innerText ?? "";
-            const am = cardText.match(/\b(STARLUX|Cathay Pacific|EVA Air|Hong Kong Express|HK Express|Hong Kong Airlines|China Airlines|Mandarin Airlines|Greater Bay Airlines|Air Macau|AirAsia|Japan Airlines|ANA|Korean Air|Asiana|Peach|Scoot|Tigerair|VietJet|Spring Airlines)\b/i);
-            if (am) { airline = am[1]; break; }
-          }
-          if (airline === "Unknown") continue;
-          flights.push({ price, airline });
-        }
-        if (flights.length > 0) break;
-      }
-
-      if (flights.length === 0) return null;
-      const lowest = flights.reduce((a, b) => a.price < b.price ? a : b);
-      return { price: lowest.price, currency: "USD", airline: lowest.airline };
-    });
-
-    if (!result) return null;
-    console.log("[trip] DOM fallback result:", result);
-    return { ...result, source: "trip" };
-  } catch {
-    return null;
   }
 }

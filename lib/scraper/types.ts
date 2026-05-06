@@ -8,10 +8,14 @@ export interface MarketStats {
   median: number;
 }
 
-export interface ScrapeResult {
+export interface ScrapeEntry {
   price: number;
   currency: string;
   airline: string;
   source: string;
+}
+
+export interface ScrapeResult {
+  entries: ScrapeEntry[];
   marketStats?: MarketStats;
 }

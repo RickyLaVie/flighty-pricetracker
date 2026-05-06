@@ -6,12 +6,13 @@ import { scrapeMomondo } from "./momondo";
 import { sendScraperFailureAlert } from "@/lib/linebot/notifications";
 import { evaluateAndAlert } from "@/lib/alerting/engine";
 import type { Browser } from "playwright";
-import type { ScrapeResult } from "./types";
+import type { ScrapeEntry, MarketStats } from "./types";
 
 const BUDGET_AIRLINES = [
   "hong kong express", "hk express", "airasia", "air asia",
   "peach", "scoot", "tigerair", "taiwan tigerair",
-  "vietjet", "spring airlines", "greater bay airlines", "greater bay",
+  "vietjet", "vietjet air", "spring airlines", "greater bay airlines", "greater bay",
+  "jeju air", "jin air", "jetstar", "cebu pacific", "nok air", "thai lion air",
 ];
 
 function isBudgetAirline(airline: string): boolean {
@@ -27,7 +28,6 @@ export async function runScrapeForRoute(routeId: string) {
   const departureDate = route.date_from.toISOString().split("T")[0];
   const returnDate = route.date_to.toISOString().split("T")[0];
 
-  // Launch ONE browser for the whole run — avoids resource contention on Railway
   let browser: Browser | undefined;
   try {
     browser = await launchBrowser();
@@ -43,32 +43,46 @@ export async function runScrapeForRoute(routeId: string) {
     () => scrapeSkyscanner(origin, destination, departureDate, returnDate, browser),
   ];
 
-  const results: ScrapeResult[] = [];
+  // Collect ALL entries from ALL scrapers
+  const allEntries: ScrapeEntry[] = [];
+  let marketStats: MarketStats | undefined;
+
   try {
     for (const scrape of scrapers) {
       try {
         const result = await scrape();
         if (!result) continue;
-        // Apply route-level filters
-        if (route.exclude_budget_airlines && isBudgetAirline(result.airline)) continue;
-        if (route.require_checked_baggage && isBudgetAirline(result.airline)) continue;
-        console.log(`[orchestrator] ${result.source}: $${result.price} ${result.airline}`);
-        results.push(result);
+        allEntries.push(...result.entries);
+        if (result.marketStats) marketStats = result.marketStats;
       } catch (err) {
-        console.error(`Scrape error for route ${routeId}:`, err);
+        console.error(`[orchestrator] scrape error for route ${routeId}:`, err);
       }
     }
   } finally {
     await browser.close().catch(() => {});
   }
 
-  if (results.length === 0) {
+  if (allEntries.length === 0) {
     await checkConsecutiveFailures(routeId);
     return;
   }
 
-  // Pick the cheapest price across all sources
-  const cheapest = results.reduce((a, b) => (a.price < b.price ? a : b));
+  console.log(`[orchestrator] total entries before filter: ${allEntries.length}`);
+
+  // Apply route-level filters globally across ALL entries
+  const filtered = allEntries.filter((e) => {
+    if (route.exclude_budget_airlines && isBudgetAirline(e.airline)) return false;
+    if (route.require_checked_baggage && isBudgetAirline(e.airline)) return false;
+    return true;
+  });
+
+  const candidates = filtered.length > 0 ? filtered : allEntries;
+  if (filtered.length === 0) {
+    console.log(`[orchestrator] all entries were filtered — using unfiltered results`);
+  }
+
+  // Pick the cheapest across all sources
+  const cheapest = candidates.reduce((a, b) => (a.price < b.price ? a : b));
   console.log(`[orchestrator] cheapest: $${cheapest.price} via ${cheapest.source} (${cheapest.airline})`);
 
   const snapshot = await prisma.priceSnapshot.create({
@@ -82,12 +96,10 @@ export async function runScrapeForRoute(routeId: string) {
     },
   });
 
-  // Persist market stats from Momondo if available
-  const withStats = results.find((r) => r.marketStats);
-  if (withStats?.marketStats) {
+  if (marketStats) {
     await prisma.route.update({
       where: { id: routeId },
-      data: { price_stats: withStats.marketStats as object },
+      data: { price_stats: marketStats as object },
     });
   }
 
@@ -95,9 +107,6 @@ export async function runScrapeForRoute(routeId: string) {
 }
 
 async function checkConsecutiveFailures(routeId: string) {
-  // Get the last 2 scrape run timestamps from the route's snapshots
-  // A "run" is identified by grouping snapshots by a time window.
-  // Simpler proxy: check if there are 0 snapshots in the last 8 hours (2 x 4h cycles).
   const twoRunsAgo = new Date(Date.now() - 8 * 60 * 60 * 1000);
   const recentSnapshots = await prisma.priceSnapshot.count({
     where: {

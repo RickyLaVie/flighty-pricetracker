@@ -2,6 +2,7 @@ import { launchBrowser, createStealthContext, randomDelay } from "./base";
 import type { Browser } from "playwright";
 import type { ScrapeResult } from "./types";
 
+
 function buildGoogleFlightsUrl(
   origin: string,
   destination: string,
@@ -113,8 +114,8 @@ export async function scrapeGoogleFlights(
 
     if (priceData.length === 0) return null;
 
-    const lowest = priceData.reduce((a, b) => (a.price < b.price ? a : b));
-    return { ...lowest, source: "google_flights" };
+    const entries = priceData.map((r) => ({ ...r, source: "google_flights" }));
+    return { entries };
   } catch (err) {
     console.error("[google-flights] scrape error:", err);
     return null;

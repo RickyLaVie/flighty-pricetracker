@@ -1,6 +1,6 @@
 import { launchBrowser, createStealthContext } from "./base";
 import type { Browser } from "playwright";
-import type { ScrapeResult, MarketStats } from "./types";
+import type { ScrapeResult, ScrapeEntry, MarketStats } from "./types";
 
 function percentile(sorted: number[], p: number): number {
   if (sorted.length === 0) return 0;
@@ -119,33 +119,37 @@ export async function scrapeMomondo(
 
     console.log("[momondo] airlines from JSON:", [...airlineMap.values()].map(a => `${a.name} $${a.price}`));
 
+    // Build market stats from FlightStatisticsAction if available
+    let marketStats: MarketStats | undefined;
+    const monthValues = flightStats?.monthPrices?.chartData?.values;
+    const monthLabels = flightStats?.monthPrices?.chartData?.labels;
+    if (monthValues && monthValues.length === 12 && monthLabels) {
+      const sorted = [...monthValues].sort((a, b) => a - b);
+      marketStats = {
+        source: "momondo",
+        updatedAt: new Date().toISOString(),
+        monthlyAvg: monthValues,
+        monthLabels,
+        p25: Math.round(percentile(sorted, 25)),
+        p75: Math.round(percentile(sorted, 75)),
+        median: Math.round(percentile(sorted, 50)),
+      };
+      console.log("[momondo] market stats:", `p25=$${marketStats.p25} median=$${marketStats.median} p75=$${marketStats.p75}`);
+    }
+
     if (airlineMap.size > 0) {
-      const cheapest = [...airlineMap.values()].reduce((a, b) => (a.price < b.price ? a : b));
-
-      // Build market stats from FlightStatisticsAction if available
-      let marketStats: MarketStats | undefined;
-      const monthValues = flightStats?.monthPrices?.chartData?.values;
-      const monthLabels = flightStats?.monthPrices?.chartData?.labels;
-      if (monthValues && monthValues.length === 12 && monthLabels) {
-        const sorted = [...monthValues].sort((a, b) => a - b);
-        marketStats = {
-          source: "momondo",
-          updatedAt: new Date().toISOString(),
-          monthlyAvg: monthValues,
-          monthLabels,
-          p25: Math.round(percentile(sorted, 25)),
-          p75: Math.round(percentile(sorted, 75)),
-          median: Math.round(percentile(sorted, 50)),
-        };
-        console.log("[momondo] market stats:", `p25=$${marketStats.p25} median=$${marketStats.median} p75=$${marketStats.p75}`);
-      }
-
-      return { price: cheapest.price, currency: cheapest.currency, airline: cheapest.name, source: "momondo", marketStats };
+      const entries: ScrapeEntry[] = [...airlineMap.values()].map((a) => ({
+        price: a.price,
+        currency: a.currency,
+        airline: a.name,
+        source: "momondo",
+      }));
+      return { entries, marketStats };
     }
 
     // Fallback: body-text parse
     console.log("[momondo] JSON parse found nothing, falling back to body text");
-    return await bodyTextFallback(page);
+    return await bodyTextFallback(page, marketStats);
   } catch (err) {
     console.error("[momondo] scrape error:", err);
     return null;
@@ -155,7 +159,7 @@ export async function scrapeMomondo(
   }
 }
 
-async function bodyTextFallback(page: import("playwright").Page): Promise<ScrapeResult | null> {
+async function bodyTextFallback(page: import("playwright").Page, marketStats?: MarketStats): Promise<ScrapeResult | null> {
   const AIRLINE_RE = /\b(STARLUX Airlines?|Cathay Pacific|EVA Air|HK Express|Hong Kong Express|Hong Kong Airlines?|China Airlines?|Mandarin Airlines?|Greater Bay Airlines?|Air Macau|AirAsia|Air Asia|Japan Airlines?|JAL|ANA|All Nippon Airways?|Korean Air|Asiana Airlines?|Peach|Scoot|Tigerair|Taiwan Tigerair|VietJet Air?|Spring Airlines?|Philippine Airlines?|Singapore Airlines?|Thai Airways?|Finnair|Lufthansa|British Airways?|Air France|Emirates|Qatar Airways?|Turkish Airlines?)\b/i;
 
   const { results } = await page.evaluate((airlineReStr: string) => {
@@ -180,7 +184,7 @@ async function bodyTextFallback(page: import("playwright").Page): Promise<Scrape
   }, AIRLINE_RE.source);
 
   if (results.length === 0) return null;
-  const lowest = results.reduce((a, b) => (a.price < b.price ? a : b));
-  console.log("[momondo] body text fallback result:", lowest);
-  return { ...lowest, source: "momondo" };
+  console.log("[momondo] body text fallback:", results.length, "results");
+  const entries = results.map((r) => ({ ...r, source: "momondo" }));
+  return { entries, marketStats };
 }

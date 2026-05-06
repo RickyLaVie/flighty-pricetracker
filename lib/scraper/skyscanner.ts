@@ -104,9 +104,8 @@ export async function scrapeSkyscanner(
     console.log("[skyscanner] results:", priceData.length, "flights");
     if (priceData.length === 0) return null;
 
-    const lowest = priceData.reduce((a, b) => (a.price < b.price ? a : b));
-    console.log("[skyscanner] cheapest:", `$${lowest.price} ${lowest.airline}`);
-    return { ...lowest, source: "skyscanner" };
+    const entries = priceData.map((r) => ({ ...r, source: "skyscanner" }));
+    return { entries };
   } catch (err) {
     console.error("[skyscanner] scrape error:", err);
     return null;
