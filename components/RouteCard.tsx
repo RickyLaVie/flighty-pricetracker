@@ -3,6 +3,15 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useLocale, T } from "@/lib/locale";
+import { AIRPORTS } from "@/lib/airports";
+
+function airportLabel(iata: string, lang: "zh" | "en"): string {
+  const a = AIRPORTS.find((ap) => ap.iata === iata);
+  if (!a) return iata;
+  if (lang === "en") return `${a.city} (${iata})`;
+  const shortName = a.nameZh.replace(/國際機場$/, "").replace(/機場$/, "");
+  return `${a.cityZh}${shortName}（${iata}）`;
+}
 
 interface Route {
   id: string;
@@ -83,7 +92,7 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
   }
 
   async function handleDelete() {
-    if (!confirm(`Delete route ${route.origin} → ${route.destination}?`)) return;
+    if (!confirm(`Delete route ${route.origin} ⇄ ${route.destination}?`)) return;
     setBusy(true);
     await fetch(`/api/routes/${route.id}`, { method: "DELETE" });
     onDeleted(route.id);
@@ -143,7 +152,7 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
           href={`/routes/${route.id}`}
           className="text-xl font-extrabold text-gray-900 hover:text-brand transition-colors leading-tight"
         >
-          {route.origin} → {route.destination}
+          {airportLabel(route.origin, lang)} ⇄ {airportLabel(route.destination, lang)}
         </Link>
         <div className="flex gap-1.5 shrink-0">
           {/* White bg + brand border = clear orange text on white */}
