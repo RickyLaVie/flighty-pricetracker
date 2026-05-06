@@ -37,10 +37,11 @@ export async function runScrapeForRoute(routeId: string) {
     return;
   }
 
+  const isRoundTrip = route.is_round_trip;
   const scrapers = [
-    () => scrapeMomondo(origin, destination, departureDate, returnDate, browser, route.require_checked_baggage),
-    () => scrapeGoogleFlights(origin, destination, departureDate, returnDate, browser),
-    () => scrapeSkyscanner(origin, destination, departureDate, returnDate, browser),
+    () => scrapeMomondo(origin, destination, departureDate, returnDate, browser, route.require_checked_baggage, isRoundTrip),
+    () => scrapeGoogleFlights(origin, destination, departureDate, returnDate, browser, isRoundTrip),
+    () => scrapeSkyscanner(origin, destination, departureDate, returnDate, browser, isRoundTrip),
   ];
 
   // Collect ALL entries from ALL scrapers

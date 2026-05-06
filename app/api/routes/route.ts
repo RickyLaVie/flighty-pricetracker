@@ -29,6 +29,7 @@ export async function GET() {
     last_checked: r.snapshots[0]?.scraped_at ?? null,
     exclude_budget_airlines: r.exclude_budget_airlines,
     require_checked_baggage: r.require_checked_baggage,
+    is_round_trip: r.is_round_trip,
   }));
   return NextResponse.json(data);
 }
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
       { status: 422 }
     );
   }
-  const { origin, destination, date_from, date_to, exclude_budget_airlines, require_checked_baggage } = parsed.data;
+  const { origin, destination, date_from, date_to, exclude_budget_airlines, require_checked_baggage, is_round_trip } = parsed.data;
   const route = await createRoute({
     origin: origin.toUpperCase(),
     destination: destination.toUpperCase(),
@@ -56,6 +57,7 @@ export async function POST(req: Request) {
     user_id: session.userId,
     exclude_budget_airlines: exclude_budget_airlines ?? false,
     require_checked_baggage: require_checked_baggage ?? false,
+    is_round_trip: is_round_trip ?? true,
   });
   return NextResponse.json(route, { status: 201 });
 }

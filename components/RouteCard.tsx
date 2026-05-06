@@ -27,6 +27,7 @@ interface Route {
   last_checked: string | null;
   exclude_budget_airlines: boolean;
   require_checked_baggage: boolean;
+  is_round_trip: boolean;
 }
 
 function sourceLabel(source: string | null): string {
@@ -69,6 +70,7 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
   const [dateTo, setDateTo] = useState(route.date_to.slice(0, 10));
   const [excludeBudget, setExcludeBudget] = useState(route.exclude_budget_airlines);
   const [requireBaggage, setRequireBaggage] = useState(route.require_checked_baggage);
+  const [isRoundTrip, setIsRoundTrip] = useState(route.is_round_trip);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -111,9 +113,10 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         date_from: dateFrom,
-        date_to: dateTo,
+        date_to: isRoundTrip ? dateTo : dateFrom,
         exclude_budget_airlines: excludeBudget,
         require_checked_baggage: requireBaggage,
+        is_round_trip: isRoundTrip,
       }),
     });
     setBusy(false);
@@ -125,6 +128,7 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
         date_to: updated.date_to,
         exclude_budget_airlines: updated.exclude_budget_airlines,
         require_checked_baggage: updated.require_checked_baggage,
+        is_round_trip: updated.is_round_trip,
       });
       setEditing(false);
     } else {
@@ -152,7 +156,7 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
           href={`/routes/${route.id}`}
           className="text-xl font-extrabold text-gray-900 hover:text-brand transition-colors leading-tight"
         >
-          {airportLabel(route.origin, lang)} ⇄ {airportLabel(route.destination, lang)}
+          {airportLabel(route.origin, lang)} {route.is_round_trip ? "⇄" : "→"} {airportLabel(route.destination, lang)}
         </Link>
         <div className="flex gap-1.5 shrink-0">
           {/* White bg + brand border = clear orange text on white */}
@@ -198,6 +202,23 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
               className="border rounded-lg px-2 py-1.5 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-brand/30"
               required
             />
+          </div>
+          {/* Trip type toggle */}
+          <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold w-fit">
+            <button
+              type="button"
+              onClick={() => setIsRoundTrip(false)}
+              className={`px-3 py-1.5 transition-colors ${!isRoundTrip ? "bg-brand text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
+            >
+              {lang === "zh" ? "單程" : "One-way"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsRoundTrip(true)}
+              className={`px-3 py-1.5 transition-colors ${isRoundTrip ? "bg-brand text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
+            >
+              {lang === "zh" ? "來回" : "Round trip"}
+            </button>
           </div>
           <div className="flex flex-col gap-1 text-sm text-gray-700">
             <label className="flex items-center gap-2 cursor-pointer">

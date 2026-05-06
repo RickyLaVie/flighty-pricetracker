@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:server": "ts-node --esm server.ts",
-    "build": "prisma generate && next build",
+    "build": "prisma db push && prisma generate && next build",
     "start": "node dist/server.js",
     "lint": "next lint"
   },

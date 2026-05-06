@@ -14,9 +14,13 @@ function buildSkyscannerUrl(
   origin: string,
   destination: string,
   departureDate: string,
-  returnDate: string
+  returnDate: string,
+  isRoundTrip?: boolean
 ): string {
   const dep = toSkyscannerDate(departureDate);
+  if (isRoundTrip === false) {
+    return `https://www.skyscanner.net/transport/flights/${origin.toLowerCase()}/${destination.toLowerCase()}/${dep}/?adults=1&cabinclass=economy&rtn=0`;
+  }
   const ret = toSkyscannerDate(returnDate);
   return `https://www.skyscanner.net/transport/flights/${origin.toLowerCase()}/${destination.toLowerCase()}/${dep}/${ret}/?adults=1&cabinclass=economy&rtn=1`;
 }
@@ -26,7 +30,8 @@ export async function scrapeSkyscanner(
   destination: string,
   departureDate: string,
   returnDate: string,
-  sharedBrowser?: Browser
+  sharedBrowser?: Browser,
+  isRoundTrip?: boolean
 ): Promise<ScrapeResult | null> {
   const ownBrowser = !sharedBrowser;
   const browser = sharedBrowser ?? await launchBrowser();
@@ -34,7 +39,7 @@ export async function scrapeSkyscanner(
   const page = await context.newPage();
 
   try {
-    const url = buildSkyscannerUrl(origin, destination, departureDate, returnDate);
+    const url = buildSkyscannerUrl(origin, destination, departureDate, returnDate, isRoundTrip);
     console.log("[skyscanner] navigating:", url);
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
     await randomDelay();

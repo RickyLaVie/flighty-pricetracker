@@ -18,6 +18,7 @@ interface RouteBasic {
   last_checked: null;
   exclude_budget_airlines: boolean;
   require_checked_baggage: boolean;
+  is_round_trip: boolean;
 }
 
 interface Props {
@@ -39,6 +40,7 @@ export function AddRouteForm({ onAdded }: Props) {
   const [dateTo, setDateTo] = useState("");
   const [excludeBudget, setExcludeBudget] = useState(false);
   const [requireBaggage, setRequireBaggage] = useState(false);
+  const [isRoundTrip, setIsRoundTrip] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const { lang } = useLocale();
@@ -49,8 +51,8 @@ export function AddRouteForm({ onAdded }: Props) {
     if (!/^[A-Za-z]{3}$/.test(origin)) e.origin = lang === "zh" ? "請輸入 3 碼機場代碼" : "3-letter IATA code required";
     if (!/^[A-Za-z]{3}$/.test(destination)) e.destination = lang === "zh" ? "請輸入 3 碼機場代碼" : "3-letter IATA code required";
     if (!dateFrom) e.date_from = lang === "zh" ? "請選擇日期" : "Required";
-    if (!dateTo) e.date_to = lang === "zh" ? "請選擇日期" : "Required";
-    if (dateFrom && dateTo && new Date(dateTo) < new Date(dateFrom))
+    if (isRoundTrip && !dateTo) e.date_to = lang === "zh" ? "請選擇日期" : "Required";
+    if (isRoundTrip && dateFrom && dateTo && new Date(dateTo) < new Date(dateFrom))
       e.date_to = lang === "zh" ? "回程日期不可早於出發日期" : "End date must be on or after start date";
     return e;
   }
@@ -69,17 +71,18 @@ export function AddRouteForm({ onAdded }: Props) {
         origin: origin.toUpperCase(),
         destination: destination.toUpperCase(),
         date_from: dateFrom,
-        date_to: dateTo,
+        date_to: isRoundTrip ? dateTo : dateFrom,
         exclude_budget_airlines: excludeBudget,
         require_checked_baggage: requireBaggage,
+        is_round_trip: isRoundTrip,
       }),
     });
 
     setBusy(false);
     if (res.ok) {
       const route = await res.json();
-      onAdded({ ...route, latest_price: null, latest_currency: null, latest_airline: null, latest_source: null, latest_departure_date: null, last_checked: null, exclude_budget_airlines: excludeBudget, require_checked_baggage: requireBaggage });
-      setOrigin(""); setDestination(""); setDateFrom(""); setDateTo("");
+      onAdded({ ...route, latest_price: null, latest_currency: null, latest_airline: null, latest_source: null, latest_departure_date: null, last_checked: null, exclude_budget_airlines: excludeBudget, require_checked_baggage: requireBaggage, is_round_trip: isRoundTrip });
+      setOrigin(""); setDestination(""); setDateFrom(""); setDateTo(""); setIsRoundTrip(true);
       setOpen(false);
     } else {
       const body = await res.json();
@@ -133,8 +136,29 @@ export function AddRouteForm({ onAdded }: Props) {
         </div>
       </div>
 
+      {/* Trip type toggle */}
+      <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm font-semibold w-fit">
+        <button
+          type="button"
+          onClick={() => setIsRoundTrip(false)}
+          className={`px-4 py-1.5 transition-colors ${!isRoundTrip ? "bg-brand text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
+        >
+          {lang === "zh" ? "單程" : "One-way"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setIsRoundTrip(true)}
+          className={`px-4 py-1.5 transition-colors ${isRoundTrip ? "bg-brand text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
+        >
+          {lang === "zh" ? "來回" : "Round trip"}
+        </button>
+      </div>
+
       <div className="flex gap-2">
         <div className="flex-1">
+          <label className="text-xs text-gray-400 mb-1 block">
+            {lang === "zh" ? "出發日期" : "Departure"}
+          </label>
           <input
             type="date"
             value={dateFrom}
@@ -145,17 +169,22 @@ export function AddRouteForm({ onAdded }: Props) {
           />
           {errors.date_from && <p className="text-red-500 text-xs mt-1">{errors.date_from}</p>}
         </div>
-        <div className="flex-1">
-          <input
-            type="date"
-            value={dateTo}
-            min="2024-01-01"
-            max="2035-12-31"
-            onChange={(e) => handleDateChange(e.target.value, setDateTo)}
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
-          />
-          {errors.date_to && <p className="text-red-500 text-xs mt-1">{errors.date_to}</p>}
-        </div>
+        {isRoundTrip && (
+          <div className="flex-1">
+            <label className="text-xs text-gray-400 mb-1 block">
+              {lang === "zh" ? "回程日期" : "Return"}
+            </label>
+            <input
+              type="date"
+              value={dateTo}
+              min="2024-01-01"
+              max="2035-12-31"
+              onChange={(e) => handleDateChange(e.target.value, setDateTo)}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
+            />
+            {errors.date_to && <p className="text-red-500 text-xs mt-1">{errors.date_to}</p>}
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-1 text-sm text-gray-600">

@@ -7,9 +7,13 @@ function buildGoogleFlightsUrl(
   origin: string,
   destination: string,
   departureDate: string,
-  returnDate: string
+  returnDate: string,
+  isRoundTrip?: boolean
 ): string {
-  return `https://www.google.com/travel/flights?q=flights+from+${origin}+to+${destination}+on+${departureDate}+returning+${returnDate}&hl=en&curr=USD&gl=tw`;
+  const base = `https://www.google.com/travel/flights?q=flights+from+${origin}+to+${destination}+on+${departureDate}`;
+  return isRoundTrip === false
+    ? `${base}&hl=en&curr=USD&gl=tw`
+    : `${base}+returning+${returnDate}&hl=en&curr=USD&gl=tw`;
 }
 
 export async function scrapeGoogleFlights(
@@ -17,7 +21,8 @@ export async function scrapeGoogleFlights(
   destination: string,
   departureDate: string,
   returnDate: string,
-  sharedBrowser?: Browser
+  sharedBrowser?: Browser,
+  isRoundTrip?: boolean
 ): Promise<ScrapeResult | null> {
   const ownBrowser = !sharedBrowser;
   const browser = sharedBrowser ?? await launchBrowser();
@@ -25,7 +30,7 @@ export async function scrapeGoogleFlights(
   const page = await context.newPage();
 
   try {
-    const url = buildGoogleFlightsUrl(origin, destination, departureDate, returnDate);
+    const url = buildGoogleFlightsUrl(origin, destination, departureDate, returnDate, isRoundTrip);
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
 
     // Dismiss cookie consent dialog if present

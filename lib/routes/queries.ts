@@ -25,6 +25,7 @@ export async function createRoute(data: {
   user_id: string;
   exclude_budget_airlines?: boolean;
   require_checked_baggage?: boolean;
+  is_round_trip?: boolean;
 }) {
   return prisma.route.create({ data: { ...data, status: "active" } });
 }
@@ -36,6 +37,7 @@ export async function updateRoute(
     date_to?: Date;
     exclude_budget_airlines?: boolean;
     require_checked_baggage?: boolean;
+    is_round_trip?: boolean;
   }
 ) {
   return prisma.route.update({ where: { id }, data });

@@ -20,6 +20,7 @@ interface Route {
   last_checked: string | null;
   exclude_budget_airlines: boolean;
   require_checked_baggage: boolean;
+  is_round_trip: boolean;
 }
 
 interface User {

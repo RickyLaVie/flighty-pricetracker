@@ -36,6 +36,7 @@ export async function PATCH(
   if (parsed.data.date_to) data.date_to = new Date(parsed.data.date_to);
   if (parsed.data.exclude_budget_airlines !== undefined) data.exclude_budget_airlines = parsed.data.exclude_budget_airlines;
   if (parsed.data.require_checked_baggage !== undefined) data.require_checked_baggage = parsed.data.require_checked_baggage;
+  if (parsed.data.is_round_trip !== undefined) data.is_round_trip = parsed.data.is_round_trip;
   const updated = await updateRoute(id, data);
   return NextResponse.json(updated);
 }

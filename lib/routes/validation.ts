@@ -21,6 +21,7 @@ export const updateRouteSchema = z
     date_to: z.string().date().optional(),
     exclude_budget_airlines: z.boolean().optional(),
     require_checked_baggage: z.boolean().optional(),
+    is_round_trip: z.boolean().optional(),
   })
   .refine(
     (d) =>
@@ -36,6 +37,7 @@ export const createRouteSchema = z
     date_to: z.string().date(),
     exclude_budget_airlines: z.boolean().optional().default(false),
     require_checked_baggage: z.boolean().optional().default(false),
+    is_round_trip: z.boolean().optional().default(true),
   })
   .refine((d) => new Date(d.date_to) >= new Date(d.date_from), {
     message: "date_to must be on or after date_from",
