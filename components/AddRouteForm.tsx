@@ -64,34 +64,47 @@ export function AddRouteForm({ onAdded }: Props) {
     setErrors({});
     setBusy(true);
 
-    const res = await fetch("/api/routes", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        origin: origin.toUpperCase(),
-        destination: destination.toUpperCase(),
-        date_from: dateFrom,
-        date_to: isRoundTrip ? dateTo : dateFrom,
-        exclude_budget_airlines: excludeBudget,
-        require_checked_baggage: requireBaggage,
-        is_round_trip: isRoundTrip,
-      }),
-    });
+    try {
+      const res = await fetch("/api/routes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          origin: origin.toUpperCase(),
+          destination: destination.toUpperCase(),
+          date_from: dateFrom,
+          date_to: isRoundTrip ? dateTo : dateFrom,
+          exclude_budget_airlines: excludeBudget,
+          require_checked_baggage: requireBaggage,
+          is_round_trip: isRoundTrip,
+        }),
+      });
 
-    setBusy(false);
-    if (res.ok) {
-      const route = await res.json();
-      onAdded({ ...route, latest_price: null, latest_currency: null, latest_airline: null, latest_source: null, latest_departure_date: null, last_checked: null, exclude_budget_airlines: excludeBudget, require_checked_baggage: requireBaggage, is_round_trip: isRoundTrip });
-      setOrigin(""); setDestination(""); setDateFrom(""); setDateTo(""); setIsRoundTrip(true);
-      setOpen(false);
-    } else {
-      const body = await res.json();
-      const fieldErrors = body?.issues?.fieldErrors ?? {};
-      const mapped: Record<string, string> = {};
-      for (const [k, msgs] of Object.entries(fieldErrors)) {
-        mapped[k] = (msgs as string[])[0] ?? "Invalid";
+      if (res.ok) {
+        const route = await res.json();
+        onAdded({ ...route, latest_price: null, latest_currency: null, latest_airline: null, latest_source: null, latest_departure_date: null, last_checked: null, exclude_budget_airlines: excludeBudget, require_checked_baggage: requireBaggage, is_round_trip: isRoundTrip });
+        setOrigin(""); setDestination(""); setDateFrom(""); setDateTo(""); setIsRoundTrip(true);
+        setOpen(false);
+      } else {
+        try {
+          const body = await res.json();
+          const fieldErrors = body?.issues?.fieldErrors ?? {};
+          const mapped: Record<string, string> = {};
+          for (const [k, msgs] of Object.entries(fieldErrors)) {
+            mapped[k] = (msgs as string[])[0] ?? "Invalid";
+          }
+          if (Object.keys(mapped).length) {
+            setErrors(mapped);
+          } else {
+            setErrors({ _: lang === "zh" ? `新增失敗（${res.status}），請再試一次` : `Failed (${res.status}), please try again` });
+          }
+        } catch {
+          setErrors({ _: lang === "zh" ? `新增失敗（${res.status}），請再試一次` : `Failed (${res.status}), please try again` });
+        }
       }
-      setErrors(mapped);
+    } catch {
+      setErrors({ _: lang === "zh" ? "網路錯誤，請再試一次" : "Network error, please try again" });
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -198,6 +211,7 @@ export function AddRouteForm({ onAdded }: Props) {
         </label>
       </div>
 
+      {errors._ && <p className="text-red-500 text-xs">{errors._}</p>}
       <div className="flex gap-2">
         <button
           type="submit"

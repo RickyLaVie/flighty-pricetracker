@@ -54,15 +54,20 @@ export async function POST(req: Request) {
     );
   }
   const { origin, destination, date_from, date_to, exclude_budget_airlines, require_checked_baggage, is_round_trip } = parsed.data;
-  const route = await createRoute({
-    origin: origin.toUpperCase(),
-    destination: destination.toUpperCase(),
-    date_from: new Date(date_from),
-    date_to: new Date(date_to),
-    user_id: session.userId,
-    exclude_budget_airlines: exclude_budget_airlines ?? false,
-    require_checked_baggage: require_checked_baggage ?? false,
-    is_round_trip: is_round_trip ?? true,
-  });
-  return NextResponse.json(route, { status: 201 });
+  try {
+    const route = await createRoute({
+      origin: origin.toUpperCase(),
+      destination: destination.toUpperCase(),
+      date_from: new Date(date_from),
+      date_to: new Date(date_to),
+      user_id: session.userId,
+      exclude_budget_airlines: exclude_budget_airlines ?? false,
+      require_checked_baggage: require_checked_baggage ?? false,
+      is_round_trip: is_round_trip ?? true,
+    });
+    return NextResponse.json(route, { status: 201 });
+  } catch (err) {
+    console.error("[api/routes] POST failed:", err);
+    return NextResponse.json({ error: "Failed to create route" }, { status: 500 });
+  }
 }
