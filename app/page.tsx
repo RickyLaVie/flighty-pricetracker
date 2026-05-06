@@ -123,6 +123,11 @@ export default function Dashboard() {
       <div className="flex flex-col gap-4">
         <LineFriendBanner />
         <AddRouteForm onAdded={handleAdded} />
+        <p className="text-xs text-gray-400 text-center -mt-2">
+          {lang === "zh"
+            ? "票價與匯率隨時變動，請依實際訂票頁面為準"
+            : "Prices and exchange rates may vary. Please refer to the booking page for final fares."}
+        </p>
 
         {routes.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
