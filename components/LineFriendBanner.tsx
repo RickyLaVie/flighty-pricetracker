@@ -72,7 +72,7 @@ export function LineFriendBanner() {
 
       {/* Add friend button */}
       <a
-        href="https://lin.ee/5dcWjLg"
+        href="https://lin.ee/V0CqpxE"
         target="_blank"
         rel="noopener noreferrer"
         onClick={handleAddFriend}
