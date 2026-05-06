@@ -36,23 +36,38 @@ export default function Dashboard() {
   const t = T[lang];
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/auth/me").then((r) => r.json()),
-      fetch("/api/routes").then((r) => r.json()),
-    ])
-      .then(([userData, routesData]) => {
+    async function load() {
+      try {
+        const meRes = await fetch("/api/auth/me");
+        const userData = meRes.ok ? await meRes.json() : null;
         setUser(userData);
-        if (Array.isArray(routesData)) {
-          const sorted = [...routesData].sort((a: Route, b: Route) => {
-            if (!a.last_checked) return 1;
-            if (!b.last_checked) return -1;
-            return new Date(b.last_checked).getTime() - new Date(a.last_checked).getTime();
-          });
-          setRoutes(sorted);
+
+        if (userData) {
+          try {
+            const routesRes = await fetch("/api/routes");
+            if (routesRes.ok) {
+              const routesData = await routesRes.json();
+              if (Array.isArray(routesData)) {
+                setRoutes(
+                  [...routesData].sort((a: Route, b: Route) => {
+                    if (!a.last_checked) return 1;
+                    if (!b.last_checked) return -1;
+                    return new Date(b.last_checked).getTime() - new Date(a.last_checked).getTime();
+                  })
+                );
+              }
+            }
+          } catch {
+            // routes failed — show empty list, don't lose auth state
+          }
         }
+      } catch {
+        setUser(null);
+      } finally {
         setLoading(false);
-      })
-      .catch(() => setLoading(false));
+      }
+    }
+    load();
   }, []);
 
   function handleAdded(route: Route) {

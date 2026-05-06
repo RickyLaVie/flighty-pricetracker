@@ -11,27 +11,32 @@ export async function GET() {
     return NextResponse.json([], { status: 200 });
   }
 
-  const routes = await listActiveRoutes(session.userId);
-  type RouteWithSnapshot = Awaited<ReturnType<typeof listActiveRoutes>>[number];
-  const data = routes.map((r: RouteWithSnapshot) => ({
-    id: r.id,
-    origin: r.origin,
-    destination: r.destination,
-    date_from: r.date_from,
-    date_to: r.date_to,
-    status: r.status,
-    created_at: r.created_at,
-    latest_price: r.snapshots[0]?.price ?? null,
-    latest_currency: r.snapshots[0]?.currency ?? null,
-    latest_airline: r.snapshots[0]?.airline ?? null,
-    latest_source: r.snapshots[0]?.source ?? null,
-    latest_departure_date: r.snapshots[0]?.departure_date ?? null,
-    last_checked: r.snapshots[0]?.scraped_at ?? null,
-    exclude_budget_airlines: r.exclude_budget_airlines,
-    require_checked_baggage: r.require_checked_baggage,
-    is_round_trip: r.is_round_trip,
-  }));
-  return NextResponse.json(data);
+  try {
+    const routes = await listActiveRoutes(session.userId);
+    type RouteWithSnapshot = Awaited<ReturnType<typeof listActiveRoutes>>[number];
+    const data = routes.map((r: RouteWithSnapshot) => ({
+      id: r.id,
+      origin: r.origin,
+      destination: r.destination,
+      date_from: r.date_from,
+      date_to: r.date_to,
+      status: r.status,
+      created_at: r.created_at,
+      latest_price: r.snapshots[0]?.price ?? null,
+      latest_currency: r.snapshots[0]?.currency ?? null,
+      latest_airline: r.snapshots[0]?.airline ?? null,
+      latest_source: r.snapshots[0]?.source ?? null,
+      latest_departure_date: r.snapshots[0]?.departure_date ?? null,
+      last_checked: r.snapshots[0]?.scraped_at ?? null,
+      exclude_budget_airlines: r.exclude_budget_airlines,
+      require_checked_baggage: r.require_checked_baggage,
+      is_round_trip: r.is_round_trip ?? true,
+    }));
+    return NextResponse.json(data);
+  } catch (err) {
+    console.error("[api/routes] GET failed:", err);
+    return NextResponse.json([], { status: 200 });
+  }
 }
 
 export async function POST(req: Request) {
