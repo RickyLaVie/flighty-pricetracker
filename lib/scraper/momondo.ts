@@ -43,9 +43,12 @@ function buildMomondoUrl(
   origin: string,
   destination: string,
   departureDate: string,
-  returnDate: string
+  returnDate: string,
+  requireCheckedBaggage?: boolean
 ): string {
-  return `https://www.momondo.com/flight-search/${origin}-${destination}/${departureDate}/${returnDate}?adults=1&sort=price_a`;
+  let url = `https://www.momondo.com/flight-search/${origin}-${destination}/${departureDate}/${returnDate}?adults=1&sort=price_a`;
+  if (requireCheckedBaggage) url += `&fs=bfc%3D1`;
+  return url;
 }
 
 interface AirlineItem {
@@ -66,7 +69,8 @@ export async function scrapeMomondo(
   destination: string,
   departureDate: string,
   returnDate: string,
-  sharedBrowser?: Browser
+  sharedBrowser?: Browser,
+  requireCheckedBaggage?: boolean
 ): Promise<ScrapeResult | null> {
   const ownBrowser = !sharedBrowser;
   const browser = sharedBrowser ?? await launchBrowser();
@@ -87,7 +91,7 @@ export async function scrapeMomondo(
   });
 
   try {
-    const url = buildMomondoUrl(origin, destination, departureDate, returnDate);
+    const url = buildMomondoUrl(origin, destination, departureDate, returnDate, requireCheckedBaggage);
     console.log("[momondo] navigating:", url);
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
 

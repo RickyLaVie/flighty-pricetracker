@@ -38,7 +38,7 @@ export async function runScrapeForRoute(routeId: string) {
   }
 
   const scrapers = [
-    () => scrapeMomondo(origin, destination, departureDate, returnDate, browser),
+    () => scrapeMomondo(origin, destination, departureDate, returnDate, browser, route.require_checked_baggage),
     () => scrapeGoogleFlights(origin, destination, departureDate, returnDate, browser),
     () => scrapeSkyscanner(origin, destination, departureDate, returnDate, browser),
   ];
@@ -69,25 +69,36 @@ export async function runScrapeForRoute(routeId: string) {
 
   console.log(`[orchestrator] total entries before filter: ${allEntries.length}`);
 
-  const needsBudgetFilter = route.exclude_budget_airlines || route.require_checked_baggage;
+  const requireBaggage = route.require_checked_baggage;
+  const excludeBudget = route.exclude_budget_airlines;
+
+  // When baggage is required, trust Momondo's URL-level baggage filter over isBudgetAirline proxy.
+  // Other scrapers can't filter by baggage, so we narrow the pool to Momondo results when available.
+  const momondoEntries = allEntries.filter((e) => e.source === "momondo");
+  const useMomondoPool = requireBaggage && momondoEntries.length > 0;
+  const pool = useMomondoPool ? momondoEntries : allEntries;
+
+  // Fallback to isBudgetAirline proxy only when baggage is required but Momondo has no data
+  const needsBudgetProxy = excludeBudget || (requireBaggage && !useMomondoPool);
 
   // Priority 1: known non-budget airlines
-  const knownNonBudget = allEntries.filter((e) => {
+  const knownNonBudget = pool.filter((e) => {
     if (e.airline === "Unknown") return false;
-    if (needsBudgetFilter && isBudgetAirline(e.airline)) return false;
+    if (needsBudgetProxy && isBudgetAirline(e.airline)) return false;
+    if (excludeBudget && useMomondoPool && isBudgetAirline(e.airline)) return false;
     return true;
   });
 
-  // Priority 2: known airlines including budget (if filter not set)
-  const knownAny = allEntries.filter((e) => e.airline !== "Unknown");
+  // Priority 2: known airlines
+  const knownAny = pool.filter((e) => e.airline !== "Unknown");
 
   // Priority 3: all entries as last resort
   const candidates =
     knownNonBudget.length > 0 ? knownNonBudget :
     knownAny.length > 0 ? knownAny :
-    allEntries;
+    pool;
 
-  console.log(`[orchestrator] candidates: ${candidates.length} (knownNonBudget=${knownNonBudget.length}, knownAny=${knownAny.length}, total=${allEntries.length})`);
+  console.log(`[orchestrator] pool=${pool.length}(momondoOnly=${useMomondoPool}) candidates=${candidates.length} (knownNonBudget=${knownNonBudget.length}, knownAny=${knownAny.length}, total=${allEntries.length})`);
 
   // Pick the cheapest across all sources
   const cheapest = candidates.reduce((a, b) => (a.price < b.price ? a : b));
