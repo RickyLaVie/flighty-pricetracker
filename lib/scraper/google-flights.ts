@@ -73,7 +73,7 @@ export async function scrapeGoogleFlights(
       const results: { price: number; currency: string; airline: string }[] = [];
       const lines = (document.body.innerText ?? "").split("\n").map(l => l.trim()).filter(Boolean);
 
-      const AIRLINE_RE = /\b(STARLUX Airlines?|Cathay Pacific|EVA Air|Hong Kong Express|HK Express|Hong Kong Airlines?|China Airlines?|Mandarin Airlines?|Greater Bay Airlines?|Air Macau|AirAsia|Japan Airlines?|ANA|Korean Air|Asiana|Peach|Scoot|Tigerair|Taiwan Tigerair|VietJet|Spring Airlines?)\b/i;
+      const AIRLINE_RE = /\b(STARLUX Airlines?|Cathay Pacific|EVA Air|Hong Kong Express|HK Express|Hong Kong Airlines?|China Airlines?|Mandarin Airlines?|Greater Bay Airlines?|Air Macau|AirAsia|Air Asia|Japan Airlines?|JAL|ANA|All Nippon Airways?|Korean Air|Asiana|Asiana Airlines?|Peach|Scoot|Tigerair|Taiwan Tigerair|VietJet|VietJet Air|Spring Airlines?|Philippine Airlines?|Singapore Airlines?|Thai Airways?|Finnair|Lufthansa|British Airways?|Air France|Emirates|Qatar Airways?|Turkish Airlines?)\b/i;
       // Match both 12-hr ("6:00 AM") and 24-hr ("06:00") flight times
       const TIME_RE = /\b\d{1,2}:\d{2}/;
 
@@ -97,13 +97,10 @@ export async function scrapeGoogleFlights(
         const contextBefore = lines.slice(Math.max(0, i - 20), i).join(" ");
         if (!TIME_RE.test(contextBefore)) continue;
 
-        // Look for airline in surrounding lines
+        // Look for airline in surrounding lines — accept Unknown rather than skipping
         const fullContext = contextBefore + " " + lines.slice(i, i + 5).join(" ");
         const airlineMatch = fullContext.match(AIRLINE_RE);
         const airline = airlineMatch ? airlineMatch[1] : "Unknown";
-
-        // Skip entries where airline is unidentified — likely premium/refundable fare rows
-        if (airline === "Unknown") continue;
 
         results.push({ price, currency: "USD", airline });
         matchedCtx.push(`$${price} | ${airline} | ...${lines.slice(Math.max(0, i - 5), i + 2).join(" | ")}...`);

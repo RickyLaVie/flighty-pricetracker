@@ -156,7 +156,7 @@ export async function scrapeMomondo(
 }
 
 async function bodyTextFallback(page: import("playwright").Page): Promise<ScrapeResult | null> {
-  const AIRLINE_RE = /\b(STARLUX Airlines?|Cathay Pacific|EVA Air|HK Express|Hong Kong Express|Hong Kong Airlines?|China Airlines?|Mandarin Airlines?|Greater Bay Airlines?|Air Macau|AirAsia|Japan Airlines?|ANA|Korean Air|Asiana|Peach|Scoot|Tigerair|Taiwan Tigerair|VietJet|Spring Airlines?)\b/i;
+  const AIRLINE_RE = /\b(STARLUX Airlines?|Cathay Pacific|EVA Air|HK Express|Hong Kong Express|Hong Kong Airlines?|China Airlines?|Mandarin Airlines?|Greater Bay Airlines?|Air Macau|AirAsia|Air Asia|Japan Airlines?|JAL|ANA|All Nippon Airways?|Korean Air|Asiana Airlines?|Peach|Scoot|Tigerair|Taiwan Tigerair|VietJet Air?|Spring Airlines?|Philippine Airlines?|Singapore Airlines?|Thai Airways?|Finnair|Lufthansa|British Airways?|Air France|Emirates|Qatar Airways?|Turkish Airlines?)\b/i;
 
   const { results } = await page.evaluate((airlineReStr: string) => {
     const AIRLINE_RE = new RegExp(airlineReStr, "i");
