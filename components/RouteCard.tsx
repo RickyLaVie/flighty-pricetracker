@@ -262,6 +262,15 @@ export function RouteCard({ route, onDeleted, onUpdated }: Props) {
       ) : (
         <div className="text-sm text-gray-400 flex flex-wrap items-center gap-2">
           <span>{route.date_from.slice(0, 10)} – {route.date_to.slice(0, 10)}</span>
+          {route.is_round_trip ? (
+            <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs font-semibold">
+              {lang === "zh" ? "來回" : "Round trip"}
+            </span>
+          ) : (
+            <span className="bg-gray-900 text-white px-2 py-0.5 rounded-full text-xs font-semibold">
+              {lang === "zh" ? "單程" : "One-way"}
+            </span>
+          )}
           {route.require_checked_baggage && (
             <span className="bg-brand-light text-brand-hover px-2 py-0.5 rounded-full text-xs font-semibold">
               {lang === "zh" ? "含托運行李" : "Checked baggage"}
