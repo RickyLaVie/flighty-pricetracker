@@ -91,11 +91,18 @@ async function handleTextMessage(
       `⏳ 正在更新 ${routes.length} 條航線的票價，請稍候...\n完成後會另行通知。`
     );
 
+    const SCRAPE_TIMEOUT_MS = 120_000; // 2 min per route
+
     // Fire-and-forget background scrape
     void (async () => {
       for (const route of routes) {
         try {
-          await runScrapeForRoute(route.id);
+          await Promise.race([
+            runScrapeForRoute(route.id),
+            new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error("timeout")), SCRAPE_TIMEOUT_MS)
+            ),
+          ]);
         } catch (err) {
           console.error(`[webhook] refresh scrape error for ${route.id}:`, err);
         }
