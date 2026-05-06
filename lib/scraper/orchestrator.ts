@@ -69,17 +69,25 @@ export async function runScrapeForRoute(routeId: string) {
 
   console.log(`[orchestrator] total entries before filter: ${allEntries.length}`);
 
-  // Apply route-level filters globally across ALL entries
-  const filtered = allEntries.filter((e) => {
-    if (route.exclude_budget_airlines && isBudgetAirline(e.airline)) return false;
-    if (route.require_checked_baggage && isBudgetAirline(e.airline)) return false;
+  const needsBudgetFilter = route.exclude_budget_airlines || route.require_checked_baggage;
+
+  // Priority 1: known non-budget airlines
+  const knownNonBudget = allEntries.filter((e) => {
+    if (e.airline === "Unknown") return false;
+    if (needsBudgetFilter && isBudgetAirline(e.airline)) return false;
     return true;
   });
 
-  const candidates = filtered.length > 0 ? filtered : allEntries;
-  if (filtered.length === 0) {
-    console.log(`[orchestrator] all entries were filtered — using unfiltered results`);
-  }
+  // Priority 2: known airlines including budget (if filter not set)
+  const knownAny = allEntries.filter((e) => e.airline !== "Unknown");
+
+  // Priority 3: all entries as last resort
+  const candidates =
+    knownNonBudget.length > 0 ? knownNonBudget :
+    knownAny.length > 0 ? knownAny :
+    allEntries;
+
+  console.log(`[orchestrator] candidates: ${candidates.length} (knownNonBudget=${knownNonBudget.length}, knownAny=${knownAny.length}, total=${allEntries.length})`);
 
   // Pick the cheapest across all sources
   const cheapest = candidates.reduce((a, b) => (a.price < b.price ? a : b));
