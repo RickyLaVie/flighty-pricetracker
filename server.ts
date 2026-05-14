@@ -10,7 +10,6 @@ process.on("uncaughtException", (err) => {
 
 process.on("unhandledRejection", (reason) => {
   console.error("[server] Unhandled rejection:", reason);
-  process.exit(1);
 });
 
 const dev = process.env.NODE_ENV !== "production";

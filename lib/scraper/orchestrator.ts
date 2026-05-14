@@ -146,7 +146,7 @@ async function checkConsecutiveFailures(routeId: string) {
         route.origin,
         route.destination,
         lastSnapshot?.scraped_at ?? null
-      );
+      ).catch((err) => console.error("[orchestrator] LINE alert failed:", err));
     }
   }
 }
