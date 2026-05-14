@@ -123,11 +123,21 @@ export default function Dashboard() {
       <div className="flex flex-col gap-4">
         <LineFriendBanner />
         <AddRouteForm onAdded={handleAdded} />
-        <p className="text-xs text-gray-400 text-center -mt-2">
-          {lang === "zh"
-            ? "票價與匯率隨時變動，請依實際訂票頁面為準"
-            : "Prices and exchange rates may vary. Please refer to the booking page for final fares."}
-        </p>
+        <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-700 -mt-2">
+          {lang === "zh" ? (
+            <>
+              機票價格每 8 小時自動更新一次。點按「立即更新」可手動抓取最新價格；由於系統需向多個機票網站查詢，請稍候片刻。
+              <br />
+              <span className="text-gray-400 mt-1 block">票價與匯率隨時變動，請依實際訂票頁面為準。</span>
+            </>
+          ) : (
+            <>
+              Prices update automatically every 8 hours. Click "Refresh Now" to fetch the latest fare immediately — this may take a moment as we query multiple flight sites.
+              <br />
+              <span className="text-gray-400 mt-1 block">Prices and exchange rates may vary. Please refer to the booking page for final fares.</span>
+            </>
+          )}
+        </div>
 
         {routes.length === 0 ? (
           <div className="text-center py-16 text-gray-400">

@@ -41,8 +41,8 @@ async function runAllRoutes() {
 }
 
 export function startScheduler() {
-  // Every 4 hours — applies random 0–30 min offset at each tick
-  cron.schedule("0 */4 * * *", () => {
+  // Every 8 hours — applies random 0–30 min offset at each tick
+  cron.schedule("0 */8 * * *", () => {
     withRandomOffset(runAllRoutes);
   });
 
@@ -51,5 +51,5 @@ export function startScheduler() {
     withRandomOffset(runNearDepartureRoutes, 10 * 60 * 1000);
   });
 
-  console.log("[scheduler] Started — 4h full scrape, 2h near-departure scrape");
+  console.log("[scheduler] Started — 8h full scrape, 2h near-departure scrape");
 }
